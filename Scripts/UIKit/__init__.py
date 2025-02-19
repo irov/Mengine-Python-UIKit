@@ -1,34 +1,24 @@
 def onInitialize():
     from Foundation.Notificator import Notificator
-
     identities = [
+        "onPopUpShow",
+        "onPopUpHide",
     ]
     Notificator.addIdentities(identities)
 
     from TraceManager import TraceManager
-
     traces = [
+        # "PopUp",
     ]
     TraceManager.addTraces(traces)
 
     from Foundation.EntityManager import EntityManager
     from Foundation.ObjectManager import ObjectManager
-
-    Types = [
+    types = [
     ]
-    if EntityManager.importEntities("MobileKit.Entities", Types) is False:
+    if EntityManager.importEntities("UIKit.Entities", types) is False:
         return False
-    if ObjectManager.importObjects("MobileKit.Objects", Types) is False:
+    if ObjectManager.importObjects("UIKit.Objects", types) is False:
         return False
-
-    # uncomment if you want to add new params for each account
-    """
-    from Foundation.AccountManager import AccountManager
-    def accountSetuper(accountID, isGlobal):
-        if isGlobal is True:
-            return
-
-    AccountManager.setCreateAccount(accountSetuper)
-    """
 
     return True
