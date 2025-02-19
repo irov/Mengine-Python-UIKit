@@ -5,12 +5,12 @@ from UIKit.Managers.PrototypeManager import PrototypeManager
 from UIKit.AdjustableScreenUtils import AdjustableScreenUtils
 
 
-SLOT_BG = "background"
 PROTOTYPE_BG = "PopUpBackground"
+PROTOTYPE_BG_TYPE = "Normal"
 
-SLOT_CLOSE = "close"
-SLOT_BACK = "back"
 PROTOTYPE_BUTTON = "PopUpButton"
+PROTOTYPE_BUTTON_CLOSE = "close"
+PROTOTYPE_BUTTON_BACK = "back"
 
 POPUP_TITLE_ALIAS = "$AliasPopUpTitle"
 
@@ -19,12 +19,11 @@ class PopUp(BaseEntity):
 
     def __init__(self):
         super(PopUp, self).__init__()
-        self._content = None
-        self.contents = {}
-
-        self.tc_buttons = None
+        self.root = None
+        self.tcs = []
+        self.background = None
         self.buttons = {}
-        self.generated = {}
+        self.contents = {}
 
     # - BaseEntity -----------------------------------------------------------------------------------------------------
 
@@ -34,59 +33,36 @@ class PopUp(BaseEntity):
         Type.addActionActivate(Type, "OpenPopUps", Append=PopUp._cbAppendOpenPopUps, Remove=PopUp._cbRemoveOpenPopUps)
 
     def _cbAppendOpenPopUps(self, index, popup_id):
-        self._update()
+        self._updatePopUp()
 
-        prev_popup_id = self.object.OpenPopUps[index-1]
+        prev_popup_id = self.object.getParam("OpenPopUps")[index-1]
         self.contents[prev_popup_id].onDeactivate()
 
     def _cbRemoveOpenPopUps(self, index, popup_id, old):
-        self._update()
+        self._updatePopUp()
         self.contents[popup_id].onDeactivate()
 
     def _onPreparation(self):
         super(PopUp, self)._onPreparation()
 
-        if self.object.hasObject("Movie2_Content") is False:
-            Trace.log("Entity", 0, "Not found Movie2_Content in {!r}".format(self.object.getName()))
-            return
-
-        self._content = self.object.getObject("Movie2_Content")
-        self._content.setInteractive(True)
-
-        self._setPosition()
-
+        self._setupRoot()
         self._setupBackground()
         self._setupButtons()
 
         self._loadContent()
-        self._update()
+        self._updatePopUp()
 
     def _onActivate(self):
         super(PopUp, self)._onActivate()
 
-        self.tc_buttons = TaskManager.createTaskChain(Name="PopUp_ActionButtons", Repeat=True)
-        with self.tc_buttons as tc:
-            with tc.addRaceTask(2) as (close, back):
-                close.addTask("TaskMovie2ButtonClick", Movie2Button=self.buttons["close"])
-                back.addTask("TaskMovie2ButtonClick", Movie2Button=self.buttons["back"])
-            tc.addScope(self._scopeCloseLastContent)
+        self._runTaskChains()
 
     def _onDeactivate(self):
         super(PopUp, self)._onDeactivate()
 
-        if self.tc_buttons is not None:
-            self.tc_buttons.cancel()
-            self.tc_buttons = None
-
-        self._content = None
-
-        for btn in self.buttons.values():
-            btn.onDestroy()
-        self.buttons = {}
-
-        for obj in self.generated.values():
-            obj.onDestroy()
-        self.generated = {}
+        for tc in self.tcs:
+            tc.cancel()
+        self.tcs = []
 
         for popup_content in self.contents.values():
             if popup_content.isActivated() is True:
@@ -94,36 +70,63 @@ class PopUp(BaseEntity):
             popup_content.onFinalize()
         self.contents = {}
 
-    # - Utils ----------------------------------------------------------------------------------------------------------
+        for btn in self.buttons.values():
+            btn.onDestroy()
+        self.buttons = {}
 
-    def _attachTo(self, btn, slot_name):
-        slot = self._content.getMovieSlot(slot_name)
-        node = btn.getEntityNode()
-        slot.addChild(node)
+        if self.background is not None:
+            self.background.onDestroy()
+            self.background = None
 
-    def getContentBoundingBox(self):
-        """ returns bounding box which is used for content positioning """
-        bounding_box = self._content.getCompositionBounds()
-        return bounding_box
+        if self.root is not None:
+            Mengine.destroyNode(self.root)
+            self.root = None
 
-    # - Components -----------------------------------------------------------------------------------------------------
+    # - Root -----------------------------------------------------------------------------------------------------------
+
+    def _setupRoot(self):
+        node = Mengine.createNode("Interender")
+        node.setName(self.__class__.__name__)
+
+        self.addChild(node)
+        _, _, _, _, _, x_center, y_center = AdjustableScreenUtils.getMainSizesExt()
+        node.setWorldPosition(Mengine.vec2f(x_center, y_center))
+
+        self.root = node
+
+    # - PopUp base -----------------------------------------------------------------------------------------------------
 
     def _setupBackground(self):
-        background_slot = self._content.getMovieSlot(SLOT_BG)
-        background_prototype = PrototypeManager.generateObjectUniqueOnNode(background_slot, PROTOTYPE_BG, Size="Normal")
+        background_prototype = PrototypeManager.generateObjectUniqueOnNode(self.root, PROTOTYPE_BG, Size=PROTOTYPE_BG_TYPE)
         background_prototype.setEnable(True)
-        self.generated[SLOT_BG] = background_prototype
+        background_prototype.setInteractive(True)
+        self.background = background_prototype
 
     def _setupButtons(self):
-        button_close_slot = self._content.getMovieSlot(SLOT_CLOSE)
-        button_close_prototype = PrototypeManager.generateObjectUniqueOnNode(button_close_slot, PROTOTYPE_BUTTON, Size="Close")
-        self.buttons[SLOT_CLOSE] = button_close_prototype
+        # generating buttons
+        button_close_prototype = PrototypeManager.generateObjectContainerOnNode(self.root, PROTOTYPE_BUTTON, Size=PROTOTYPE_BUTTON_CLOSE)
+        self.buttons[PROTOTYPE_BUTTON_CLOSE] = button_close_prototype
 
-        button_back_slot = self._content.getMovieSlot(SLOT_BACK)
-        button_back_prototype = PrototypeManager.generateObjectUniqueOnNode(button_back_slot, PROTOTYPE_BUTTON, Size="Back")
-        self.buttons[SLOT_BACK] = button_back_prototype
+        button_back_prototype = PrototypeManager.generateObjectContainerOnNode(self.root, PROTOTYPE_BUTTON, Size=PROTOTYPE_BUTTON_BACK)
+        self.buttons[PROTOTYPE_BUTTON_BACK] = button_back_prototype
 
-    # - View -----------------------------------------------------------------------------------------------------------
+        # calculating and setting buttons pos
+        background_sizes = self.getSizes()
+        buttons_pos = Mengine.vec2f(background_sizes.x/2, -background_sizes.y/2)
+
+        for button in self.buttons.values():
+            button_bounds = button.getCompositionBounds()
+            button_size = Utils.getBoundingBoxSize(button_bounds)
+            button_pos = Mengine.vec2f(buttons_pos.x - button_size.x / 2, buttons_pos.y + button_size.y / 2)
+            button_node = button.getEntityNode()
+            button_node.setLocalPosition(button_pos)
+
+    def getSizes(self):
+        bounding_box = self.background.getCompositionBounds()
+        box_size = Utils.getBoundingBoxSize(bounding_box)
+        return box_size
+
+    # - Content --------------------------------------------------------------------------------------------------------
 
     def _loadContent(self):
         for popup_id, popup_content in PopUpManager.getAllPopUpContents().items():
@@ -131,9 +134,9 @@ class PopUp(BaseEntity):
             popup_content.onInitialize(self)
             popup_content.onPreparation()
 
-    def _update(self):
+    def _updatePopUp(self):
         self._updateContent()
-        self._updateActionButton()
+        self._updateActionButtons()
         self._updateTitle()
 
     def _updateContent(self):
@@ -142,17 +145,19 @@ class PopUp(BaseEntity):
 
         current_popup_id = self.object.getParam("OpenPopUps")[-1]
         popup_content = self.contents[current_popup_id]
+
         if popup_content.isActivated() is False:
             popup_content.onActivate()
 
-    def _updateActionButton(self):
+    def _updateActionButtons(self):
         open_popups = self.object.getParam("OpenPopUps")
-        if len(open_popups) <= 1:   # 0, 1
-            self.buttons["close"].setEnable(True)
-            self.buttons["back"].setEnable(False)
-        else:   # 2+
-            self.buttons["back"].setEnable(True)
-            self.buttons["close"].setEnable(False)
+
+        if len(open_popups) <= 1:
+            self.buttons[PROTOTYPE_BUTTON_CLOSE].setEnable(True)
+            self.buttons[PROTOTYPE_BUTTON_BACK].setEnable(False)
+        else:
+            self.buttons[PROTOTYPE_BUTTON_BACK].setEnable(True)
+            self.buttons[PROTOTYPE_BUTTON_CLOSE].setEnable(False)
 
     def _updateTitle(self):
         open_pop_ups = self.object.getParam("OpenPopUps")
@@ -164,16 +169,24 @@ class PopUp(BaseEntity):
         current_popup_content = self.contents[current_popup_id]
         Mengine.setTextAlias("", POPUP_TITLE_ALIAS, current_popup_content.title_text_id)
 
-    def _setPosition(self):
-        _, _, _, _, _, x_center, y_center = AdjustableScreenUtils.getMainSizesExt()
+    # - TaskChain ------------------------------------------------------------------------------------------------------
 
-        content_entity = self._content.getEntityNode()
-        content_entity.setWorldPosition(Mengine.vec2f(x_center, y_center))
+    def _createTaskChain(self, name, **params):
+        tc = TaskManager.createTaskChain(Name=self.__class__.__name__+"_"+name, **params)
+        self.tcs.append(tc)
+        return tc
 
-    # - Scopes ---------------------------------------------------------------------------------------------------------
+    def _runTaskChains(self):
+        with self._createTaskChain("ActionButtons", Repeat=True) as tc:
+            for key, tc_race in tc.addRaceTaskList(self.buttons.keys()):
+                tc_race.addTask("TaskMovie2ButtonClick", Movie2Button=self.buttons[key].movie)
+            tc.addScope(self._scopeCloseLastContent)
 
     def _scopeCloseLastContent(self, source):
         open_popups = self.object.getParam("OpenPopUps")
-        last_popup_id = open_popups[-1]
+        if len(open_popups) == 0:
+            source.addNotify(Notificator.onPopUpHide, None)
+            return
 
-        source.addNotify(Notificator.onPopUpClose, last_popup_id)
+        last_popup_id = open_popups[-1]
+        source.addNotify(Notificator.onPopUpHide, last_popup_id)

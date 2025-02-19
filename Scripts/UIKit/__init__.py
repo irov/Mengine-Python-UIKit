@@ -23,3 +23,7 @@ def onInitialize():
         return False
 
     return True
+
+
+def onFinalize():
+    pass
