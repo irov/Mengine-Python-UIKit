@@ -1,6 +1,6 @@
 from Foundation.GroupManager import GroupManager
 from Foundation.DatabaseManager import DatabaseManager
-from UIKit.IconManager import IconManager
+from UIKit.Managers.IconManager import IconManager
 
 
 class PrototypeManager(object):

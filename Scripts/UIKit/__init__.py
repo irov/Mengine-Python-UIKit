@@ -15,6 +15,7 @@ def onInitialize():
     from Foundation.EntityManager import EntityManager
     from Foundation.ObjectManager import ObjectManager
     types = [
+        {"name": "PopUp", "override": True}
     ]
     if EntityManager.importEntities("UIKit.Entities", types) is False:
         return False

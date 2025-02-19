@@ -61,7 +61,7 @@ class SystemPopUp(System):
         if TaskManager.existTaskChain("PopUp_OpenFlow") is True:
             return
         with TaskManager.createTaskChain(Name="PopUp_OpenFlow") as tc:
-            # tc.addTask("TaskSceneLayerGroupEnable", LayerName="PopUp", Value=True)
+            tc.addTask("TaskSceneLayerGroupEnable", LayerName="PopUp", Value=True)
             tc.addTask("TaskFadeIn", GroupName="Fade", To=0.5, Time=250.0)
 
     def _closePopUp(self, open_pop_ups):
@@ -71,7 +71,7 @@ class SystemPopUp(System):
         if TaskManager.existTaskChain("PopUp_CloseFlow") is True:
             return
         with TaskManager.createTaskChain(Name="PopUp_CloseFlow") as tc:
-            # tc.addTask("TaskSceneLayerGroupEnable", LayerName="PopUp", Value=False)
+            tc.addTask("TaskSceneLayerGroupEnable", LayerName="PopUp", Value=False)
             tc.addTask("TaskFadeOut", GroupName="Fade", From=0.5, Time=250.0)
 
     def _cbSceneActivate(self, scene_name):
