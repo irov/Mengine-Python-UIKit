@@ -9,7 +9,6 @@ class PopUpContent(Initializer):
 
     def __init__(self):
         super(PopUpContent, self).__init__()
-        self.root = None
         self.pop_up_base = None
         self.content = None
         self.tcs = []
@@ -20,13 +19,8 @@ class PopUpContent(Initializer):
         super(PopUpContent, self)._onInitialize()
         self.pop_up_base = pop_up_base
 
-        self.content = self.pop_up_base.object.getObject(self.content_movie_name)
-        if self.content is None:
-            Trace.log("PopUp", 0, "Not found {!r} in {!r}".format(self.content_movie_name, self.pop_up_base.getName()))
+        if self.__setupContent() is False:
             return False
-
-        self.__setupRoot()
-        self.__setupContent()
 
         self._onInitializeContent()
 
@@ -43,29 +37,33 @@ class PopUpContent(Initializer):
 
         self._onFinalizeContent()
 
-        if self.root is not None:
-            Mengine.destroyNode(self.root)
-            self.root = None
+        if self.content is not None:
+            self.content.onDestroy()
+            self.content = None
 
-        self.content = None
         self.pop_up_base = None
 
     def _onFinalizeContent(self):
         print "_finalizeContent", self.popup_id
         pass
 
-    # - Root -----------------------------------------------------------------------------------------------------------
-
-    def __setupRoot(self):
-        self.root = Mengine.createNode("Interender")
-        self.root.setName(self.__class__.__name__)
-
-    # - Setup Content --------------------------------------------------------------------------------------------------
+    # - Content --------------------------------------------------------------------------------------------------------
 
     def __setupContent(self):
-        self.pop_up_base.attachChild(self.root)
+        self.content = self.pop_up_base.object.generateObjectUnique(self.content_movie_name, self.content_movie_name)
+        if self.content is None:
+            Trace.log("PopUp", 0, "Not found {!r} in {!r}".format(self.content_movie_name, self.pop_up_base.getName()))
+            return False
+
+        self.content.setEnable(True)
+
+        return True
+    # - Tools ----------------------------------------------------------------------------------------------------------
+
+    def attachTo(self, node):
         content_node = self.content.getEntityNode()
-        self.root.addChild(content_node)
+        content_node.removeFromParent()
+        node.addChild(content_node)
 
     def _createTaskChain(self, name, **params):
         tc = TaskManager.createTaskChain(Name=self.__class__.__name__+"_"+name, **params)

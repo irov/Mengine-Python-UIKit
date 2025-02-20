@@ -5,6 +5,15 @@ from UIKit.Managers.PrototypeManager import PrototypeManager
 from UIKit.AdjustableScreenUtils import AdjustableScreenUtils
 
 
+MOVIE_CONTENT = "Movie2_Content"
+SLOT_BG = "background"
+SLOT_CONTENT = "content"
+SLOT_CLOSE = "close"
+SLOT_BACK = "back"
+TITLE_ALIAS = "$AliasPopUpTitle"
+TITLE_TEXT_ID = "ID_PopUpTitle"
+
+
 PROTOTYPE_BG = "PopUpBackground"
 PROTOTYPE_BG_TYPE = "Normal"
 
@@ -12,7 +21,6 @@ PROTOTYPE_BUTTON = "PopUpButton"
 PROTOTYPE_BUTTON_CLOSE = "close"
 PROTOTYPE_BUTTON_BACK = "back"
 
-POPUP_TITLE_ALIAS = "$AliasPopUpTitle"
 TITLE_OFFSET_Y = 50.0
 
 
@@ -20,12 +28,12 @@ class PopUp(BaseEntity):
 
     def __init__(self):
         super(PopUp, self).__init__()
-        self.root = None
+        self.content = None
         self.tcs = []
         self.background = None
         self.buttons = {}
         self.title = None
-        self.contents = {}
+        self.pop_up_contents = {}
 
     # - BaseEntity -----------------------------------------------------------------------------------------------------
 
@@ -47,12 +55,14 @@ class PopUp(BaseEntity):
     def _onPreparation(self):
         super(PopUp, self)._onPreparation()
 
-        self._setupRoot()
+        if self._setupContent() is False:
+            return False
+
         self._setupBackground()
         self._setupButtons()
         self._setupTitle()
 
-        self._loadContent()
+        self._setupPopUpContent()
         self._updatePopUp()
 
     def _onActivate(self):
@@ -67,11 +77,11 @@ class PopUp(BaseEntity):
             tc.cancel()
         self.tcs = []
 
-        for popup_content in self.contents.values():
+        for popup_content in self.pop_up_contents.values():
             # if popup_content.isActivated() is True:
             #     popup_content.onDeactivate()
             popup_content.onFinalize()
-        self.contents = {}
+        self.pop_up_contents = {}
 
         if self.title is not None:
             Mengine.destroyNode(self.title)
@@ -85,44 +95,51 @@ class PopUp(BaseEntity):
             self.background.onDestroy()
             self.background = None
 
-        if self.root is not None:
-            Mengine.destroyNode(self.root)
-            self.root = None
+        if self.content is not None:
+            self.content.onDestroy()
+            self.content = None
 
-    # - Root -----------------------------------------------------------------------------------------------------------
+    # - PopUp Setup ----------------------------------------------------------------------------------------------------
 
-    def _setupRoot(self):
-        node = Mengine.createNode("Interender")
-        node.setName(self.__class__.__name__)
+    def _setupContent(self):
+        self.content = self.object.generateObjectUnique(MOVIE_CONTENT, MOVIE_CONTENT)
+        if self.content is None:
+            Trace.log("Entity", 0, "Not found {!r} in {!r}".format(MOVIE_CONTENT, self.object.getName()))
+            return False
 
-        self.addChild(node)
+        self.content.setEnable(True)
+
+        content_node = self.content.getEntityNode()
+        self.addChild(content_node)
+
         _, _, _, _, _, x_center, y_center = AdjustableScreenUtils.getMainSizesExt()
-        node.setWorldPosition(Mengine.vec2f(x_center, y_center))
+        content_node.setWorldPosition(Mengine.vec2f(x_center, y_center))
 
-        self.root = node
-
-    def attachChild(self, node):
-        node.removeFromParent()
-        self.root.addChild(node)
-
-    # - PopUp base -----------------------------------------------------------------------------------------------------
+        return True
 
     def _setupBackground(self):
-        background_prototype = PrototypeManager.generateObjectUniqueOnNode(self.root, PROTOTYPE_BG, Size=PROTOTYPE_BG_TYPE)
+        slot_bg = self.content.getMovieSlot(SLOT_BG)
+        background_prototype = PrototypeManager.generateObjectUniqueOnNode(slot_bg, PROTOTYPE_BG, Size=PROTOTYPE_BG_TYPE)
         background_prototype.setEnable(True)
-        background_prototype.setInteractive(True)
         self.background = background_prototype
+
+    def getBackgroundSizes(self):
+        bounding_box = self.background.getCompositionBounds()
+        box_size = Utils.getBoundingBoxSize(bounding_box)
+        return box_size
 
     def _setupButtons(self):
         # generating buttons
-        button_close_prototype = PrototypeManager.generateObjectContainerOnNode(self.root, PROTOTYPE_BUTTON, Size=PROTOTYPE_BUTTON_CLOSE)
+        slot_close = self.content.getMovieSlot(SLOT_CLOSE)
+        button_close_prototype = PrototypeManager.generateObjectContainerOnNode(slot_close, PROTOTYPE_BUTTON, Size=PROTOTYPE_BUTTON_CLOSE)
         self.buttons[PROTOTYPE_BUTTON_CLOSE] = button_close_prototype
 
-        button_back_prototype = PrototypeManager.generateObjectContainerOnNode(self.root, PROTOTYPE_BUTTON, Size=PROTOTYPE_BUTTON_BACK)
+        slot_back = self.content.getMovieSlot(SLOT_BACK)
+        button_back_prototype = PrototypeManager.generateObjectContainerOnNode(slot_back, PROTOTYPE_BUTTON, Size=PROTOTYPE_BUTTON_BACK)
         self.buttons[PROTOTYPE_BUTTON_BACK] = button_back_prototype
 
         # calculating and setting buttons pos
-        background_sizes = self.getSizes()
+        background_sizes = self.getBackgroundSizes()
         buttons_pos = Mengine.vec2f(background_sizes.x/2, -background_sizes.y/2)
 
         for button in self.buttons.values():
@@ -132,49 +149,7 @@ class PopUp(BaseEntity):
             button_node = button.getEntityNode()
             button_node.setLocalPosition(button_pos)
 
-    def _setupTitle(self):
-        node = Mengine.createNode("TextField")
-        node.setName(self.__class__.__name__+"_"+"Title")
-        node.setVerticalCenterAlign()
-        node.setHorizontalCenterAlign()
-        node.setTextId("ID_EMPTY")
-
-        self.root.addChild(node)
-        background_sizes = self.getSizes()
-        text_height = node.getFontHeight()
-        node.setLocalPosition(Mengine.vec2f(0, -background_sizes.y/2 + text_height/2 + TITLE_OFFSET_Y))
-
-        self.title = node
-
-    def getSizes(self):
-        bounding_box = self.background.getCompositionBounds()
-        box_size = Utils.getBoundingBoxSize(bounding_box)
-        return box_size
-
-    # - Content --------------------------------------------------------------------------------------------------------
-
-    def _loadContent(self):
-        current_popup_id = self.object.getParam("OpenPopUps")[-1]
-        pop_up_content = PopUpManager.getPopUpContent(current_popup_id)
-        self.contents[current_popup_id] = pop_up_content
-        pop_up_content.onInitialize(self)
-
-    def _updatePopUp(self):
-        self._updateContent()
-        self._updateActionButtons()
-        self._updateTitle()
-
-    def _updateContent(self):
-        if len(self.object.getParam("OpenPopUps")) == 0:
-            return
-
-        current_popup_id = self.object.getParam("OpenPopUps")[-1]
-        popup_content = self.contents[current_popup_id]
-
-        # if popup_content.isActivated() is False:
-        #     popup_content.onActivate()
-
-    def _updateActionButtons(self):
+    def _updateButtons(self):
         open_popups = self.object.getParam("OpenPopUps")
 
         if len(open_popups) <= 1:
@@ -184,6 +159,17 @@ class PopUp(BaseEntity):
             self.buttons[PROTOTYPE_BUTTON_BACK].setEnable(True)
             self.buttons[PROTOTYPE_BUTTON_CLOSE].setEnable(False)
 
+    def _setupTitle(self):
+        Mengine.setTextAlias("", TITLE_ALIAS, TITLE_TEXT_ID)
+        Mengine.setTextAliasArguments("", TITLE_ALIAS, "")
+
+        title = self.content.getMovieText(TITLE_ALIAS)
+        background_sizes = self.getBackgroundSizes()
+        title_height = title.getFontHeight()
+        title.setLocalPosition(Mengine.vec2f(0, -background_sizes.y/2 + title_height/2 + TITLE_OFFSET_Y))
+        title.setVerticalCenterAlign()
+        title.setHorizontalCenterAlign()
+
     def _updateTitle(self):
         open_pop_ups = self.object.getParam("OpenPopUps")
 
@@ -191,8 +177,38 @@ class PopUp(BaseEntity):
             return
 
         current_popup_id = open_pop_ups[-1]
-        current_popup_content = self.contents[current_popup_id]
-        Mengine.setTextAlias("", POPUP_TITLE_ALIAS, current_popup_content.title_text_id)
+        current_popup_content = self.pop_up_contents[current_popup_id]
+        title_text = Mengine.getTextFromId(current_popup_content.title_text_id)
+        Mengine.setTextAliasArguments("", TITLE_ALIAS, title_text)
+
+    def getTitleSizes(self):
+        title = self.content.getMovieText(TITLE_ALIAS)
+        title_sizes = title.getTextSize()
+        return title_sizes
+
+    def _setupPopUpContent(self):
+        current_popup_id = self.object.getParam("OpenPopUps")[-1]
+        pop_up_content = PopUpManager.getPopUpContent(current_popup_id)
+        self.pop_up_contents[current_popup_id] = pop_up_content
+        pop_up_content.onInitialize(self)
+
+        content_slot = self.content.getMovieSlot(SLOT_CONTENT)
+        pop_up_content.attachTo(content_slot)
+
+    def _updatePopUpContent(self):
+        if len(self.object.getParam("OpenPopUps")) == 0:
+            return
+
+        current_popup_id = self.object.getParam("OpenPopUps")[-1]
+        popup_content = self.pop_up_contents[current_popup_id]
+
+        # if popup_content.isActivated() is False:
+        #     popup_content.onActivate()
+
+    def _updatePopUp(self):
+        self._updatePopUpContent()
+        self._updateButtons()
+        self._updateTitle()
 
     # - TaskChain ------------------------------------------------------------------------------------------------------
 
