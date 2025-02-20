@@ -19,19 +19,18 @@ class SystemPopUp(System):
         self.addObserver(Notificator.onPopUpHide, self._cbPopUpHide)
         self.addObserver(Notificator.onSceneActivate, self._cbSceneActivate)
 
-    def _cbPopUpShow(self, pop_up_id=None):
-        # if PopUpManager.hasPopUpContent(pop_up_id) is False:
-        #     Trace.log("Manager", 0, "popup_ip {!r} doesn't exist in PopUpManager".format(pop_up_id))
-        #     return False
-        #
-        # pop_up = DemonManager.getDemon("PopUp")
-        # open_pop_ups = pop_up.getParam("OpenPopUps")
-        #
-        # if pop_up_id not in open_pop_ups:
-        #     pop_up.appendParam("OpenPopUps", pop_up_id)
+    def _cbPopUpShow(self, pop_up_id):
+        if PopUpManager.hasPopUpContent(pop_up_id) is False:
+            Trace.log("Manager", 0, "popup_ip {!r} doesn't exist in PopUpManager".format(pop_up_id))
+            return False
 
-        # self._openPopUp(pop_up)
-        self._openPopUp()
+        pop_up = DemonManager.getDemon("PopUp")
+        open_pop_ups = pop_up.getParam("OpenPopUps")
+
+        if pop_up_id not in open_pop_ups:
+            pop_up.appendParam("OpenPopUps", pop_up_id)
+
+        self._openPopUp(pop_up)
 
         return False
 
@@ -50,13 +49,13 @@ class SystemPopUp(System):
 
         return False
 
-    def _openPopUp(self, pop_up=None):
-        # if pop_up.hasEntity() is False:
-        #     if SceneManager.isCurrentSceneActive() is True:
-        #         Trace.log("Manager", 0, "PopUp has no entity (maybe group is not attached at scene)")
-        #     return
-        # if pop_up.isEntityActivate() is True:
-        #     return
+    def _openPopUp(self, pop_up):
+        if pop_up.hasEntity() is False:
+            if SceneManager.isCurrentSceneActive() is True:
+                Trace.log("Manager", 0, "PopUp has no entity (maybe group is not attached at scene)")
+            return
+        if pop_up.isEntityActivate() is True:
+            return
 
         if TaskManager.existTaskChain("PopUp_OpenFlow") is True:
             return
@@ -81,8 +80,3 @@ class SystemPopUp(System):
             self._openPopUp(pop_up)
 
         return False
-
-
-
-
-

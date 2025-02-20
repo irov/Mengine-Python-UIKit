@@ -13,6 +13,7 @@ PROTOTYPE_BUTTON_CLOSE = "close"
 PROTOTYPE_BUTTON_BACK = "back"
 
 POPUP_TITLE_ALIAS = "$AliasPopUpTitle"
+TITLE_OFFSET_Y = 50.0
 
 
 class PopUp(BaseEntity):
@@ -23,6 +24,7 @@ class PopUp(BaseEntity):
         self.tcs = []
         self.background = None
         self.buttons = {}
+        self.title = None
         self.contents = {}
 
     # - BaseEntity -----------------------------------------------------------------------------------------------------
@@ -48,6 +50,7 @@ class PopUp(BaseEntity):
         self._setupRoot()
         self._setupBackground()
         self._setupButtons()
+        self._setupTitle()
 
         self._loadContent()
         self._updatePopUp()
@@ -69,6 +72,10 @@ class PopUp(BaseEntity):
                 popup_content.onDeactivate()
             popup_content.onFinalize()
         self.contents = {}
+
+        if self.title is not None:
+            Mengine.destroyNode(self.title)
+            self.title = None
 
         for btn in self.buttons.values():
             btn.onDestroy()
@@ -117,9 +124,23 @@ class PopUp(BaseEntity):
         for button in self.buttons.values():
             button_bounds = button.getCompositionBounds()
             button_size = Utils.getBoundingBoxSize(button_bounds)
-            button_pos = Mengine.vec2f(buttons_pos.x - button_size.x / 2, buttons_pos.y + button_size.y / 2)
+            button_pos = Mengine.vec2f(buttons_pos.x - button_size.x/2, buttons_pos.y + button_size.y/2)
             button_node = button.getEntityNode()
             button_node.setLocalPosition(button_pos)
+
+    def _setupTitle(self):
+        node = Mengine.createNode("TextField")
+        node.setName(self.__class__.__name__+"_"+"Title")
+        node.setVerticalCenterAlign()
+        node.setHorizontalCenterAlign()
+        node.setTextId("ID_EMPTY")
+
+        self.root.addChild(node)
+        background_sizes = self.getSizes()
+        text_height = node.getFontHeight()
+        node.setLocalPosition(Mengine.vec2f(0, -background_sizes.y/2 + text_height/2 + TITLE_OFFSET_Y))
+
+        self.title = node
 
     def getSizes(self):
         bounding_box = self.background.getCompositionBounds()
