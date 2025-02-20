@@ -3,94 +3,71 @@ from Foundation.TaskManager import TaskManager
 
 
 class PopUpContent(Initializer):
-    popup_id = None             # type: str
-    title_text_id = None        # type: str
-    content_movie_name = None   # type: str
+    popup_id = ""
+    title_text_id = ""
+    content_movie_name = ""
 
     def __init__(self):
         super(PopUpContent, self).__init__()
+        self.root = None
+        self.pop_up_base = None
         self.content = None
-        self._prepared = False
-        self._activate = False
-        self.owner = None
         self.tcs = []
 
-    def isPrepared(self):
-        return self._prepared is True
+    # - Initializer ----------------------------------------------------------------------------------------------------
 
-    def isActivated(self):
-        return self._activate is True
+    def _onInitialize(self, pop_up_base):
+        super(PopUpContent, self)._onInitialize()
+        self.pop_up_base = pop_up_base
 
-    def onInitialize(self, owner):
-        self.owner = owner
-        self.content = self.owner.object.getObject(self.content_movie_name)
-        print "self.content", self.content
+        self.content = self.pop_up_base.object.getObject(self.content_movie_name)
         if self.content is None:
-            Trace.log("PopUp", 0, "Not found {!r} in {!r}".format(self.content_movie_name, self.owner.getName()))
-            self._initialized = None    # means not initialized yet
+            Trace.log("PopUp", 0, "Not found {!r} in {!r}".format(self.content_movie_name, self.pop_up_base.getName()))
             return False
 
-        super(PopUpContent, self).onInitialize()
+        self.__setupRoot()
+        self.__setupContent()
 
-    def _onInitialize(self):
-        """ here we initialize params, prepare to create objects, etc. """
-        raise NotImplementedError
+        self._onInitializeContent()
 
-    def onPreparation(self):
-        if self.isInitialized() is False:
-            Trace.log("PopUp", 0, "Content {!r} must be initialized before onPreparation".format(self.__class__.__name__))
-            return
-
-        self._onPreparation()
-        self._prepared = True
-
-    def _onPreparation(self):
-        """ here we create objects that will be used in future """
-        raise NotImplementedError
-
-    def onActivate(self):
-        if self.isPrepared() is False:
-            Trace.log("PopUp", 0, "Content {!r} must be prepared before onActivate".format(self.__class__.__name__))
-            return
-
-        self._onActivate()
-        self._activate = True
-
-    def _onActivate(self):
-        """ here we activate objects (enable, play animations, etc.) and run tasks"""
-        raise NotImplementedError
-
-    def onDeactivate(self):
-        if self.isActivated() is False:
-            Trace.log("PopUp", 0, "Content {!r} must be activated before onDeactivate".format(self.__class__.__name__))
-            return
-
-        for tc in self.tcs:
-            tc.cancel()
-        self.tcs = []
-
-        self._onDeactivate()
-        self._activate = False
-
-    def _onDeactivate(self):
-        """ here we deactivate objects (disable, stop animations, etc.) + auto tcs canceling """
-        raise NotImplementedError
-
-    def onFinalize(self):
-        for tc in self.tcs:
-            tc.cancel()
-        self.tcs = []
-
-        super(PopUpContent, self).onFinalize()
-        self.content = None
-
-        self._initialized = None    # allows to initialize again
+    def _onInitializeContent(self):
+        print "_initializeContent", self.popup_id
+        pass
 
     def _onFinalize(self):
-        """ here we destroy objects that we created in onPreparation if needed + auto tcs canceling """
-        raise NotImplementedError
+        super(PopUpContent, self)._onFinalize()
 
-    def createTaskChain(self, name, **params):
-        tc = TaskManager.createTaskChain(Name="PopUpContent_"+self.__class__.__name__+"_"+name, **params)
+        for tc in self.tcs:
+            tc.cancel()
+        self.tcs = []
+
+        self._onFinalizeContent()
+
+        if self.root is not None:
+            Mengine.destroyNode(self.root)
+            self.root = None
+
+        self.content = None
+        self.pop_up_base = None
+
+    def _onFinalizeContent(self):
+        print "_finalizeContent", self.popup_id
+        pass
+
+    # - Root -----------------------------------------------------------------------------------------------------------
+
+    def __setupRoot(self):
+        self.root = Mengine.createNode("Interender")
+        self.root.setName(self.__class__.__name__)
+
+    # - Setup Content --------------------------------------------------------------------------------------------------
+
+    def __setupContent(self):
+        self.pop_up_base.attachChild(self.root)
+        content_node = self.content.getEntityNode()
+        self.root.addChild(content_node)
+
+    def _createTaskChain(self, name, **params):
+        tc = TaskManager.createTaskChain(Name=self.__class__.__name__+"_"+name, **params)
         self.tcs.append(tc)
         return tc

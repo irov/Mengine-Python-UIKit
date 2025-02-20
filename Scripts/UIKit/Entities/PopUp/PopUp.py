@@ -38,11 +38,11 @@ class PopUp(BaseEntity):
         self._updatePopUp()
 
         prev_popup_id = self.object.getParam("OpenPopUps")[index-1]
-        self.contents[prev_popup_id].onDeactivate()
+        # self.contents[prev_popup_id].onDeactivate()
 
     def _cbRemoveOpenPopUps(self, index, popup_id, old):
         self._updatePopUp()
-        self.contents[popup_id].onDeactivate()
+        # self.contents[popup_id].onDeactivate()
 
     def _onPreparation(self):
         super(PopUp, self)._onPreparation()
@@ -68,8 +68,8 @@ class PopUp(BaseEntity):
         self.tcs = []
 
         for popup_content in self.contents.values():
-            if popup_content.isActivated() is True:
-                popup_content.onDeactivate()
+            # if popup_content.isActivated() is True:
+            #     popup_content.onDeactivate()
             popup_content.onFinalize()
         self.contents = {}
 
@@ -100,6 +100,10 @@ class PopUp(BaseEntity):
         node.setWorldPosition(Mengine.vec2f(x_center, y_center))
 
         self.root = node
+
+    def attachChild(self, node):
+        node.removeFromParent()
+        self.root.addChild(node)
 
     # - PopUp base -----------------------------------------------------------------------------------------------------
 
@@ -150,10 +154,10 @@ class PopUp(BaseEntity):
     # - Content --------------------------------------------------------------------------------------------------------
 
     def _loadContent(self):
-        for popup_id, popup_content in PopUpManager.getAllPopUpContents().items():
-            self.contents[popup_id] = popup_content
-            popup_content.onInitialize(self)
-            popup_content.onPreparation()
+        current_popup_id = self.object.getParam("OpenPopUps")[-1]
+        pop_up_content = PopUpManager.getPopUpContent(current_popup_id)
+        self.contents[current_popup_id] = pop_up_content
+        pop_up_content.onInitialize(self)
 
     def _updatePopUp(self):
         self._updateContent()
@@ -167,8 +171,8 @@ class PopUp(BaseEntity):
         current_popup_id = self.object.getParam("OpenPopUps")[-1]
         popup_content = self.contents[current_popup_id]
 
-        if popup_content.isActivated() is False:
-            popup_content.onActivate()
+        # if popup_content.isActivated() is False:
+        #     popup_content.onActivate()
 
     def _updateActionButtons(self):
         open_popups = self.object.getParam("OpenPopUps")
