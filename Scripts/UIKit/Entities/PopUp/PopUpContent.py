@@ -65,6 +65,10 @@ class PopUpContent(Initializer):
         content_node.removeFromParent()
         node.addChild(content_node)
 
+    def getNode(self):
+        content_node = self.content.getEntityNode()
+        return content_node
+
     def _createTaskChain(self, name, **params):
         tc = TaskManager.createTaskChain(Name=self.__class__.__name__+"_"+name, **params)
         self.tcs.append(tc)

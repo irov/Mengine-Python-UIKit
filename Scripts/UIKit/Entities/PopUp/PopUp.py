@@ -23,47 +23,31 @@ PROTOTYPE_BUTTON_BACK = "back"
 
 TITLE_OFFSET_Y = 50.0
 
+TIME_VALUE = 250.0
+FADE_VALUE = 0.5
+SCALE_VALUE = (1.1, 1.1, 1.0)
+
 
 class PopUp(BaseEntity):
-
     def __init__(self):
         super(PopUp, self).__init__()
         self.content = None
         self.tcs = []
         self.background = None
         self.buttons = {}
-        self.title = None
         self.pop_up_contents = {}
 
     # - BaseEntity -----------------------------------------------------------------------------------------------------
 
-    @staticmethod
-    def declareORM(Type):
-        BaseEntity.declareORM(Type)
-        Type.addActionActivate(Type, "OpenPopUps", Append=PopUp._cbAppendOpenPopUps, Remove=PopUp._cbRemoveOpenPopUps)
-
-    def _cbAppendOpenPopUps(self, index, popup_id):
-        self._updatePopUp()
-
-        prev_popup_id = self.object.getParam("OpenPopUps")[index-1]
-        # self.contents[prev_popup_id].onDeactivate()
-
-    def _cbRemoveOpenPopUps(self, index, popup_id, old):
-        self._updatePopUp()
-        # self.contents[popup_id].onDeactivate()
-
     def _onPreparation(self):
         super(PopUp, self)._onPreparation()
 
-        if self._setupContent() is False:
+        if self._setupContentBase() is False:
             return False
 
         self._setupBackground()
         self._setupButtons()
         self._setupTitle()
-
-        self._setupPopUpContent()
-        self._updatePopUp()
 
     def _onActivate(self):
         super(PopUp, self)._onActivate()
@@ -78,14 +62,10 @@ class PopUp(BaseEntity):
         self.tcs = []
 
         for popup_content in self.pop_up_contents.values():
-            # if popup_content.isActivated() is True:
-            #     popup_content.onDeactivate()
             popup_content.onFinalize()
         self.pop_up_contents = {}
 
-        if self.title is not None:
-            Mengine.destroyNode(self.title)
-            self.title = None
+        self.last_pop_up_content_id = None
 
         for btn in self.buttons.values():
             btn.onDestroy()
@@ -99,9 +79,9 @@ class PopUp(BaseEntity):
             self.content.onDestroy()
             self.content = None
 
-    # - PopUp Setup ----------------------------------------------------------------------------------------------------
+    # - PopUp Elements -------------------------------------------------------------------------------------------------
 
-    def _setupContent(self):
+    def _setupContentBase(self):
         self.content = self.object.generateObjectUnique(MOVIE_CONTENT, MOVIE_CONTENT)
         if self.content is None:
             Trace.log("Entity", 0, "Not found {!r} in {!r}".format(MOVIE_CONTENT, self.object.getName()))
@@ -132,6 +112,7 @@ class PopUp(BaseEntity):
         # generating buttons
         slot_close = self.content.getMovieSlot(SLOT_CLOSE)
         button_close_prototype = PrototypeManager.generateObjectContainerOnNode(slot_close, PROTOTYPE_BUTTON, Size=PROTOTYPE_BUTTON_CLOSE)
+        button_close_prototype.setEnable(True)
         self.buttons[PROTOTYPE_BUTTON_CLOSE] = button_close_prototype
 
         slot_back = self.content.getMovieSlot(SLOT_BACK)
@@ -150,14 +131,14 @@ class PopUp(BaseEntity):
             button_node.setLocalPosition(button_pos)
 
     def _updateButtons(self):
-        open_popups = self.object.getParam("OpenPopUps")
+        pop_ups_contents = self.pop_up_contents.values()
 
-        if len(open_popups) <= 1:
-            self.buttons[PROTOTYPE_BUTTON_CLOSE].setEnable(True)
-            self.buttons[PROTOTYPE_BUTTON_BACK].setEnable(False)
-        else:
+        if len(pop_ups_contents) > 1:
             self.buttons[PROTOTYPE_BUTTON_BACK].setEnable(True)
             self.buttons[PROTOTYPE_BUTTON_CLOSE].setEnable(False)
+        else:
+            self.buttons[PROTOTYPE_BUTTON_CLOSE].setEnable(True)
+            self.buttons[PROTOTYPE_BUTTON_BACK].setEnable(False)
 
     def _setupTitle(self):
         Mengine.setTextAlias("", TITLE_ALIAS, TITLE_TEXT_ID)
@@ -171,14 +152,9 @@ class PopUp(BaseEntity):
         title.setHorizontalCenterAlign()
 
     def _updateTitle(self):
-        open_pop_ups = self.object.getParam("OpenPopUps")
-
-        if len(open_pop_ups) == 0:
-            return
-
-        current_popup_id = open_pop_ups[-1]
-        current_popup_content = self.pop_up_contents[current_popup_id]
-        title_text = Mengine.getTextFromId(current_popup_content.title_text_id)
+        pop_up_content_id = list(self.pop_up_contents)[-1]
+        pop_up_content = self.pop_up_contents[pop_up_content_id]
+        title_text = Mengine.getTextFromId(pop_up_content.title_text_id)
         Mengine.setTextAliasArguments("", TITLE_ALIAS, title_text)
 
     def getTitleSizes(self):
@@ -186,27 +162,7 @@ class PopUp(BaseEntity):
         title_sizes = title.getTextSize()
         return title_sizes
 
-    def _setupPopUpContent(self):
-        current_popup_id = self.object.getParam("OpenPopUps")[-1]
-        pop_up_content = PopUpManager.getPopUpContent(current_popup_id)
-        self.pop_up_contents[current_popup_id] = pop_up_content
-        pop_up_content.onInitialize(self)
-
-        content_slot = self.content.getMovieSlot(SLOT_CONTENT)
-        pop_up_content.attachTo(content_slot)
-
-    def _updatePopUpContent(self):
-        if len(self.object.getParam("OpenPopUps")) == 0:
-            return
-
-        current_popup_id = self.object.getParam("OpenPopUps")[-1]
-        popup_content = self.pop_up_contents[current_popup_id]
-
-        # if popup_content.isActivated() is False:
-        #     popup_content.onActivate()
-
-    def _updatePopUp(self):
-        self._updatePopUpContent()
+    def updatePopUpElements(self):
         self._updateButtons()
         self._updateTitle()
 
@@ -221,13 +177,58 @@ class PopUp(BaseEntity):
         with self._createTaskChain("ActionButtons", Repeat=True) as tc:
             for key, tc_race in tc.addRaceTaskList(self.buttons.keys()):
                 tc_race.addTask("TaskMovie2ButtonClick", Movie2Button=self.buttons[key].movie)
-            tc.addScope(self._scopeCloseLastContent)
+                tc_race.addNotify(Notificator.onPopUpHide)
 
-    def _scopeCloseLastContent(self, source):
-        open_popups = self.object.getParam("OpenPopUps")
-        if len(open_popups) == 0:
-            source.addNotify(Notificator.onPopUpHide, None)
-            return
+    def showPopUp(self, source, content_id):
+        content_node = self.content.getEntityNode()
 
-        last_popup_id = open_popups[-1]
-        source.addNotify(Notificator.onPopUpHide, last_popup_id)
+        # play hide popup anim, before showing new content
+        with source.addIfTask(lambda: len(self.pop_up_contents) != 0) as (true, false):
+            true.addScope(self.hidePopUp)
+
+        # play show popup anim with content
+        with source.addParallelTask(2) as (pop_up, content):
+            content.addScope(self.showPopUpContent, content_id)
+
+            with pop_up.addParallelTask(3) as (fade, alpha, scale):
+                alpha.addTask("TaskNodeAlphaTo", Node=content_node, From=0.0, To=1.0, Time=TIME_VALUE)
+                fade.addTask("TaskFadeIn", GroupName="FadeUI", To=FADE_VALUE, Time=TIME_VALUE)
+                scale.addTask("TaskNodeScaleTo", Node=content_node, From=SCALE_VALUE, To=(1.0, 1.0, 1.0), Time=TIME_VALUE)
+
+    def hidePopUp(self, source):
+        content_node = self.content.getEntityNode()
+
+        # play hide popup anim with content
+        with source.addParallelTask(2) as (pop_up, content):
+            content.addScope(self.hidePopUpContent)
+
+            with pop_up.addParallelTask(3) as (fade, alpha, scale):
+                alpha.addTask("TaskNodeAlphaTo", Node=content_node, From=1.0, To=0.0, Time=TIME_VALUE)
+                fade.addTask("TaskFadeOut", GroupName="FadeUI", From=FADE_VALUE, Time=TIME_VALUE)
+                scale.addTask("TaskNodeScaleTo", Node=content_node, From=(1.0, 1.0, 1.0), To=SCALE_VALUE, Time=TIME_VALUE)
+
+    def showPopUpContent(self, source, pop_up_content_id):
+        if pop_up_content_id not in self.pop_up_contents:
+            pop_up_content = PopUpManager.getPopUpContent(pop_up_content_id)
+            pop_up_content.onInitialize(self)
+            self.pop_up_contents[pop_up_content_id] = pop_up_content
+
+        pop_up_content = self.pop_up_contents[pop_up_content_id]
+
+        pop_up_content_slot = self.content.getMovieSlot(SLOT_CONTENT)
+        pop_up_content.attachTo(pop_up_content_slot)
+
+        pop_up_content_node = pop_up_content.getNode()
+
+        source.addFunction(self.updatePopUpElements)
+        source.addTask("TaskNodeAlphaTo", Node=pop_up_content_node, From=0.0, To=1.0, Time=TIME_VALUE)
+
+    def hidePopUpContent(self, source):
+        pop_up_content_id = list(self.pop_up_contents)[-1]
+        pop_up_content = self.pop_up_contents[pop_up_content_id]
+        pop_up_content_node = pop_up_content.getNode()
+
+        self.pop_up_contents.pop(pop_up_content_id)
+
+        source.addTask("TaskNodeAlphaTo", Node=pop_up_content_node, From=1.0, To=0.0, Time=TIME_VALUE)
+        source.addFunction(pop_up_content.onFinalize)
