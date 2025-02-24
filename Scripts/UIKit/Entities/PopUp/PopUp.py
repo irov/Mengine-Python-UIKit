@@ -30,8 +30,9 @@ SCALE_VALUE = (1.1, 1.1, 1.0)
 class PopUp(BaseEntity):
     def __init__(self):
         super(PopUp, self).__init__()
-        self.content = None
         self.tcs = []
+        self.hotspot_block = None
+        self.content = None
         self.background = None
         self.buttons = {}
         self.pop_up_content = None
@@ -45,6 +46,7 @@ class PopUp(BaseEntity):
         if self._setupContentBase() is False:
             return False
 
+        self._setupHotspotBlock()
         self._setupBackground()
         self._setupButtons()
         self._setupTitle()
@@ -80,9 +82,24 @@ class PopUp(BaseEntity):
             self.content.onDestroy()
             self.content = None
 
+        if self.hotspot_block is not None:
+            Mengine.destroyNode(self.hotspot_block)
+            self.hotspot_block = None
+
         self.is_back_allowed = False
 
     # - PopUp Elements -------------------------------------------------------------------------------------------------
+
+    def _setupHotspotBlock(self):
+        self.hotspot_block = Mengine.createNode("HotSpotPolygon")
+        self.hotspot_block.setName(self.__class__.__name__ + "_" + "Block")
+
+        viewport = Mengine.getGameViewport()
+        hotspot_polygon = [viewport.begin, (viewport.end.x, viewport.begin.y),
+                           viewport.end, (viewport.begin.x, viewport.end.y)]
+        self.hotspot_block.setPolygon(hotspot_polygon)
+
+        self.addChildFront(self.hotspot_block)
 
     def _setupContentBase(self):
         self.content = self.object.generateObjectUnique(MOVIE_CONTENT, MOVIE_CONTENT)
