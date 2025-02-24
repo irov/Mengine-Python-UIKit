@@ -1,5 +1,4 @@
 class PopUpManager(object):
-
     s_contents = {}
 
     @staticmethod
@@ -14,17 +13,20 @@ class PopUpManager(object):
         popup_content_type = Utils.importType(module, name)
         if popup_content_type is None:
             return False
+
         PopUpManager.addPopUpContent(popup_content_type)
         return True
 
     @staticmethod
     def addPopUpContent(popup_content_type):
         popup_content = popup_content_type()
-        PopUpManager.s_contents[popup_content.popup_id] = popup_content
+        popup_id = popup_content.popup_id
+
+        PopUpManager.s_contents[popup_id] = popup_content_type
 
     @staticmethod
     def getPopUpContent(popup_id):
-        return PopUpManager.s_contents.get(popup_id)
+        return PopUpManager.s_contents.get(popup_id)()
 
     @staticmethod
     def hasPopUpContent(popup_id):
@@ -39,12 +41,5 @@ class PopUpManager(object):
         for popup_content in PopUpManager.s_contents.values():
             if popup_content.isInitialized() is True:
                 popup_content.onFinalize()
+
         PopUpManager.s_contents = {}
-
-
-
-
-
-
-
-
