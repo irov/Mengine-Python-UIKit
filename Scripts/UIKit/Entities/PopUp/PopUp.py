@@ -181,6 +181,7 @@ class PopUp(BaseEntity):
                 tc_race.addNotify(Notificator.onPopUpHide)
 
     def showPopUp(self, source, content_id, is_back_allowed):
+        self.is_back_allowed = is_back_allowed
         content_node = self.content.getEntityNode()
 
         # play hide popup anim, before showing new content
@@ -189,7 +190,7 @@ class PopUp(BaseEntity):
 
         # play show popup anim with content
         with source.addParallelTask(2) as (pop_up, content):
-            content.addScope(self.showPopUpContent, content_id, is_back_allowed)
+            content.addScope(self.showPopUpContent, content_id)
 
             with pop_up.addParallelTask(2) as (alpha, scale):
                 alpha.addTask("TaskNodeAlphaTo", Node=content_node, From=0.0, To=1.0, Time=TIME_VALUE)
@@ -206,17 +207,14 @@ class PopUp(BaseEntity):
                 alpha.addTask("TaskNodeAlphaTo", Node=content_node, From=1.0, To=0.0, Time=TIME_VALUE)
                 scale.addTask("TaskNodeScaleTo", Node=content_node, From=(1.0, 1.0, 1.0), To=SCALE_VALUE, Time=TIME_VALUE)
 
-    def showPopUpContent(self, source, pop_up_content_id, is_back_allowed):
-        pop_up_content = PopUpManager.getPopUpContent(pop_up_content_id)
-        pop_up_content.onInitialize(self)
-        self.pop_up_content = pop_up_content
+    def showPopUpContent(self, source, pop_up_content_id):
+        self.pop_up_content = PopUpManager.getPopUpContent(pop_up_content_id)
+        self.pop_up_content.onInitialize(self)
 
         pop_up_content_slot = self.content.getMovieSlot(SLOT_CONTENT)
-        pop_up_content.attachTo(pop_up_content_slot)
+        self.pop_up_content.attachTo(pop_up_content_slot)
 
-        pop_up_content_node = pop_up_content.getNode()
-
-        self.is_back_allowed = is_back_allowed
+        pop_up_content_node = self.pop_up_content.getNode()
 
         source.addFunction(self.updatePopUpElements)
         source.addTask("TaskNodeAlphaTo", Node=pop_up_content_node, From=0.0, To=1.0, Time=TIME_VALUE)
