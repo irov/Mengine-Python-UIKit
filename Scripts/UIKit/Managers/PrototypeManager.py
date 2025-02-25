@@ -83,7 +83,6 @@ class PrototypeManager(object):
             return None
 
         icon = None
-
         param_prototype = params_orm.Icon.get("Prototype")
         param_size = params_orm.Icon.get("Size")
         param_slot = params_orm.Icon.get("Slot")
