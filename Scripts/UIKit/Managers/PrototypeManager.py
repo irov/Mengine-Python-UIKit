@@ -78,8 +78,8 @@ class PrototypeManager(object):
         if object_name is None:
             object_name = params_orm.ObjectName
 
-        movie = PrototypeManager._generateObjectUnique(params_orm.Prototype, object_name)
-        if movie is None:
+        object_unique = PrototypeManager._generateObjectUnique(params_orm.Prototype, object_name)
+        if object_unique is None:
             return None
 
         icon = None
@@ -89,14 +89,16 @@ class PrototypeManager(object):
 
         if param_prototype is not None:
             icon = IconManager.generateIcon(param_prototype, param_size)
+            icon_node = icon.getEntityNode()
+            object_type = object_unique.getType()
 
-            if params_orm.Type == "Movie2Button":
-                movie.addChildToSlot(icon.getEntityNode(), param_slot)
-            else:
-                slot = movie.getMovieSlot(param_slot)
-                slot.addChild(icon.getEntityNode())
+            if object_type in ["ObjectMovie2Button", "ObjectMovie2CheckBox"]:
+                object_unique.addChildToSlot(icon_node, param_slot)
+            elif object_type in ["ObjectMovie2"]:
+                slot = object_unique.getMovieSlot(param_slot)
+                slot.addChild(icon_node)
 
-        container = ObjectContainer(movie, icon)
+        container = ObjectContainer(object_unique, icon)
 
         return container
 

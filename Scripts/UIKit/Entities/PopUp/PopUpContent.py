@@ -58,6 +58,7 @@ class PopUpContent(Initializer):
         self.content.setEnable(True)
 
         return True
+
     # - Tools ----------------------------------------------------------------------------------------------------------
 
     def attachTo(self, node):
