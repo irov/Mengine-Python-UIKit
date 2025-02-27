@@ -51,6 +51,8 @@ class PopUp(BaseEntity):
         self._setupButtons()
         self._setupTitle()
 
+        self._setupContentBasePos()
+
     def _onActivate(self):
         super(PopUp, self)._onActivate()
 
@@ -117,13 +119,26 @@ class PopUp(BaseEntity):
 
         return True
 
+    def _setupContentBasePos(self):
+        pop_up_content_slot = self.content.getMovieSlot(SLOT_CONTENT)
+        background_size = self.getBackgroundSize()
+        content_size = self.getContentSize()
+
+        pop_up_content_slot.setLocalPosition(Mengine.vec2f(0, (background_size.y - content_size.y)/2))
+
+    def getContentSize(self):
+        background_size = self.getBackgroundSize()
+        header_size = self.getHeaderSize()
+        content_size = Mengine.vec2f(background_size.x, background_size.y - header_size.y)
+        return content_size
+
     def _setupBackground(self):
         slot_bg = self.content.getMovieSlot(SLOT_BG)
         background_prototype = PrototypeManager.generateObjectUniqueOnNode(slot_bg, PROTOTYPE_BG, Size=PROTOTYPE_BG_TYPE)
         background_prototype.setEnable(True)
         self.background = background_prototype
 
-    def getBackgroundSizes(self):
+    def getBackgroundSize(self):
         bounding_box = self.background.getCompositionBounds()
         box_size = Utils.getBoundingBoxSize(bounding_box)
         return box_size
@@ -140,8 +155,8 @@ class PopUp(BaseEntity):
         self.buttons[PROTOTYPE_BUTTON_BACK] = button_back_prototype
 
         # calculating and setting buttons pos
-        background_sizes = self.getBackgroundSizes()
-        buttons_pos = Mengine.vec2f(background_sizes.x/2, -background_sizes.y/2)
+        background_size = self.getBackgroundSize()
+        buttons_pos = Mengine.vec2f(background_size.x/2, -background_size.y/2)
 
         for button in self.buttons.values():
             button_bounds = button.getCompositionBounds()
@@ -149,6 +164,16 @@ class PopUp(BaseEntity):
             button_pos = Mengine.vec2f(buttons_pos.x - button_size.x/2, buttons_pos.y + button_size.y/2)
             button_node = button.getEntityNode()
             button_node.setLocalPosition(button_pos)
+
+    def getButtonSize(self):
+        button_size = Mengine.vec2f(0, 0)
+
+        for button in self.buttons.values():
+            size = button.getSize()
+            if button_size.y < size.y:
+                button_size = size
+
+        return button_size
 
     def _updateButtons(self):
         if self.is_back_allowed is True:
@@ -163,7 +188,7 @@ class PopUp(BaseEntity):
         Mengine.setTextAliasArguments("", TITLE_ALIAS, "")
 
         title = self.content.getMovieText(TITLE_ALIAS)
-        background_sizes = self.getBackgroundSizes()
+        background_sizes = self.getBackgroundSize()
         title_height = title.getFontHeight()
         title.setLocalPosition(Mengine.vec2f(0, -background_sizes.y/2 + title_height/2 + TITLE_OFFSET_Y))
         title.setVerticalCenterAlign()
@@ -175,10 +200,16 @@ class PopUp(BaseEntity):
         title_text = Mengine.getTextFromId(pop_up_content_title)
         Mengine.setTextAliasArguments("", TITLE_ALIAS, title_text)
 
-    def getTitleSizes(self):
+    def getTitleSize(self):
         title = self.content.getMovieText(TITLE_ALIAS)
         title_sizes = title.getTextSize()
         return title_sizes
+
+    def getHeaderSize(self):
+        title_size = self.getTitleSize()
+        button_size = self.getButtonSize()
+        header_size = Mengine.vec2f(max(title_size.x, button_size.x), max(title_size.y, button_size.y))
+        return header_size
 
     def updatePopUpElements(self):
         self._updateButtons()

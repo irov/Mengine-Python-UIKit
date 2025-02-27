@@ -127,11 +127,24 @@ class ObjectContainer(object):
         if self.icon is not None:
             self.icon.setTextAliasEnvironment(text_env)
 
+    def setLocalPosition(self, pos):
+        node = self.movie.getEntityNode()
+        node.setLocalPosition(pos)
+
+    def getLocalPosition(self):
+        node = self.movie.getEntityNode()
+        return node.getLocalPosition()
+
     def getEntityNode(self):
         return self.movie.getEntityNode()
 
     def getCompositionBounds(self):
         return self.movie.getCompositionBounds()
+
+    def getSize(self):
+        bounds = self.movie.getCompositionBounds()
+        size = Utils.getBoundingBoxSize(bounds)
+        return size
 
     def setParam(self, key, value):
         self.movie.setParam(key, value)

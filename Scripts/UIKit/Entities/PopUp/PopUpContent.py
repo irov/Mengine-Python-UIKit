@@ -74,3 +74,79 @@ class PopUpContent(Initializer):
         tc = TaskManager.createTaskChain(Name=self.__class__.__name__+"_"+name, **params)
         self.tcs.append(tc)
         return tc
+
+    def setupObjectsSlotsAsTable(self, objects_list):
+        """
+        objects_list = [
+            dict_1 = {
+                slot_name_1: object_1,
+                slot_name_2: object_2,
+                ...
+            },
+            dict_2 = {
+                slot_name_1: object_1,
+                ...
+            },
+            ...
+        ]
+        """
+
+        # prepare variables
+        content_size = self.pop_up_base.getContentSize()
+        start_pos = Mengine.vec2f(0, 0)
+        start_pos -= content_size / 2
+
+        # setup objects between each other
+        current_size_y = 0
+        objects_len_y = len(objects_list)
+        for row in objects_list:
+
+            current_size_x = 0
+            maximum_size_y = 0
+
+            for key, obj in row.items():
+                obj_pos = obj.getLocalPosition()
+                obj_pos += start_pos
+
+                obj_size = obj.getSize()
+                obj_pos += obj_size / 2
+
+                obj_pos.x += current_size_x
+                obj_pos.y += current_size_y
+
+                obj_slot = self.content.getMovieSlot(key)
+                obj_slot.setLocalPosition(obj_pos)
+
+                current_size_x += obj_size.x
+                if maximum_size_y < obj_size.y:
+                    maximum_size_y = obj_size.y
+
+            current_size_y += maximum_size_y
+
+        # calc offset y
+        available_space_y = content_size.y - current_size_y
+        offset_y = available_space_y / (objects_len_y + 1)
+
+        # adding offsets between objects
+        for y, row in enumerate(objects_list):
+            current_size_x = 0
+            objects_len_x = len(row.items())
+
+            # add offset y
+            for key, obj in row.items():
+                old_pos = obj.getLocalPosition()
+                new_pos = Mengine.vec2f(old_pos.x, old_pos.y + offset_y * (y + 1))
+                obj.setLocalPosition(new_pos)
+
+                obj_size = obj.getSize()
+                current_size_x += obj_size.x
+
+            # calc offset x
+            available_space_x = content_size.x - current_size_x
+            offset_x = available_space_x / (objects_len_x + 1)
+
+            # add offset x
+            for x, (key, obj) in enumerate(row.items()):
+                old_pos = obj.getLocalPosition()
+                new_pos = Mengine.vec2f(old_pos.x + offset_x * (x + 1), old_pos.y)
+                obj.setLocalPosition(new_pos)
