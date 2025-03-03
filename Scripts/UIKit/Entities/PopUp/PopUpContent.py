@@ -81,7 +81,7 @@ class PopUpContent(Initializer):
         if container is None:
             return None
 
-        container.setTextAliasEnvironment(content_id)
+        # container.setTextAliasEnvironment(content_id)
         container.setEnable(True)
 
         return container
