@@ -20,17 +20,17 @@ class PopUpManager(object):
     @staticmethod
     def addPopUpContent(popup_content_type):
         popup_content = popup_content_type()
-        popup_id = popup_content.popup_id
+        content_id = popup_content.content_id
 
-        PopUpManager.s_contents[popup_id] = popup_content_type
-
-    @staticmethod
-    def getPopUpContent(popup_id):
-        return PopUpManager.s_contents.get(popup_id)()
+        PopUpManager.s_contents[content_id] = popup_content_type
 
     @staticmethod
-    def hasPopUpContent(popup_id):
-        return popup_id in PopUpManager.s_contents
+    def getPopUpContent(content_id):
+        return PopUpManager.s_contents.get(content_id)()
+
+    @staticmethod
+    def hasPopUpContent(content_id):
+        return content_id in PopUpManager.s_contents
 
     @staticmethod
     def getAllPopUpContents():

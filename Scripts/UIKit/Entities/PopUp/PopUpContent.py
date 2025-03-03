@@ -1,9 +1,10 @@
 from Foundation.Initializer import Initializer
 from Foundation.TaskManager import TaskManager
+from UIKit.Managers.PrototypeManager import PrototypeManager
 
 
 class PopUpContent(Initializer):
-    popup_id = ""
+    content_id = ""
     title_text_id = ""
     content_movie_name = ""
 
@@ -25,7 +26,7 @@ class PopUpContent(Initializer):
         self._onInitializeContent()
 
     def _onInitializeContent(self):
-        print "_initializeContent", self.popup_id
+        print "_initializeContent", self.content_id
         pass
 
     def _onFinalize(self):
@@ -44,7 +45,7 @@ class PopUpContent(Initializer):
         self.pop_up_base = None
 
     def _onFinalizeContent(self):
-        print "_finalizeContent", self.popup_id
+        print "_finalizeContent", self.content_id
         pass
 
     # - Content --------------------------------------------------------------------------------------------------------
@@ -74,6 +75,21 @@ class PopUpContent(Initializer):
         tc = TaskManager.createTaskChain(Name=self.__class__.__name__+"_"+name, **params)
         self.tcs.append(tc)
         return tc
+
+    def _generateContainter(self, content_id, **params):
+        container = PrototypeManager.generateObjectContainer(content_id, **params)
+        if container is None:
+            return None
+
+        container.setTextAliasEnvironment(content_id)
+        container.setEnable(True)
+
+        return container
+
+    def _attachObjectToSlot(self, obj, name):
+        object_node = obj.getEntityNode()
+        slot = self.content.getMovieSlot(name)
+        slot.addChild(object_node)
 
     def setupObjectsSlotsAsTable(self, objects_list):
         """
