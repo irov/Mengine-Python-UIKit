@@ -72,16 +72,17 @@ class PopUpContent(Initializer):
         return content_node
 
     def _createTaskChain(self, name, **params):
-        tc = TaskManager.createTaskChain(Name=self.__class__.__name__+"_"+name, **params)
+        tc = TaskManager.createTaskChain(Name=self.__class__.__name__+ "_" +name, **params)
         self.tcs.append(tc)
         return tc
 
-    def _generateContainter(self, content_id, **params):
-        container = PrototypeManager.generateObjectContainer(content_id, **params)
+    def _generateContainter(self, name, **params):
+        prototype_name = self.__class__.__name__ + "_" + name
+        container = PrototypeManager.generateObjectContainer(prototype_name, **params)
         if container is None:
             return None
 
-        # container.setTextAliasEnvironment(content_id)
+        container.setTextAliasEnvironment(prototype_name)
         container.setEnable(True)
 
         return container

@@ -6,10 +6,10 @@ from UIKit.AdjustableScreenUtils import AdjustableScreenUtils
 
 
 MOVIE_CONTENT = "Movie2_Content"
-SLOT_BG = "background"
-SLOT_CONTENT = "content"
-SLOT_CLOSE = "close"
-SLOT_BACK = "back"
+SLOT_BG = "Background"
+SLOT_CONTENT = "Content"
+SLOT_CLOSE = "Close"
+SLOT_BACK = "Back"
 TITLE_ALIAS = "$AliasPopUpTitle"
 TITLE_TEXT_ID = "ID_PopUpTitle"
 
@@ -18,8 +18,8 @@ PROTOTYPE_BG = "PopUpBackground"
 PROTOTYPE_BG_TYPE = "Normal"
 
 PROTOTYPE_BUTTON = "PopUpButton"
-PROTOTYPE_BUTTON_CLOSE = "close"
-PROTOTYPE_BUTTON_BACK = "back"
+PROTOTYPE_BUTTON_CLOSE = "Close"
+PROTOTYPE_BUTTON_BACK = "Back"
 
 TITLE_OFFSET_Y = 50.0
 
