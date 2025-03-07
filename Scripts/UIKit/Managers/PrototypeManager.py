@@ -138,6 +138,11 @@ class ObjectContainer(object):
     def getEntityNode(self):
         return self.movie.getEntityNode()
 
+    def attachTo(self, node):
+        root = self.movie.getEntityNode()
+        root.removeFromParent()
+        node.addChild(root)
+
     def getCompositionBounds(self):
         return self.movie.getCompositionBounds()
 
