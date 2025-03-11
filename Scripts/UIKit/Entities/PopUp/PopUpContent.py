@@ -26,7 +26,7 @@ class PopUpContent(Initializer):
         self._onInitializeContent()
 
     def _onInitializeContent(self):
-        print "_initializeContent", self.content_id
+        print "Initialize PopUpContent {!r}".format(self.content_id)
         pass
 
     def _onFinalize(self):
@@ -45,7 +45,7 @@ class PopUpContent(Initializer):
         self.pop_up_base = None
 
     def _onFinalizeContent(self):
-        print "_finalizeContent", self.content_id
+        print "Finalize PopUpContent {!r}".format(self.content_id)
         pass
 
     # - Content --------------------------------------------------------------------------------------------------------
