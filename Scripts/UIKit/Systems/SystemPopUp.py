@@ -104,7 +104,7 @@ class SystemPopUp(System):
 
                 pop_up.addScope(pop_up_entity.showPopUp, content_id, buttons_state)
 
-            tc.addNotify(Notificator.onPopUpShowEnd)
+            tc.addNotify(Notificator.onPopUpShowEnd, content_id)
 
     def hidePopUp(self):
         if TaskManager.existTaskChain(POP_UP + "Hide") is True:
@@ -113,28 +113,28 @@ class SystemPopUp(System):
         pop_up_entity = self.demon.entity
 
         # remove content from contents queue
-        current_content_id = self.getCurrentContentId()
-        self.pop_up_contents.remove(current_content_id)
+        previous_content_id = self.getCurrentContentId()
+        self.pop_up_contents.remove(previous_content_id)
 
         # prepare variables for task chain
-        current_content_id = self.getCurrentContentId()
+        new_content_id = self.getCurrentContentId()
 
         # create task chain to hide pop up
         with TaskManager.createTaskChain(Name=POP_UP + "Hide") as tc:
             with tc.addParallelTask(2) as (fade, pop_up):
                 # play fade out if hiding last pop up in queue
-                with fade.addIfTask(lambda: current_content_id is None) as (true, false):
+                with fade.addIfTask(lambda: new_content_id is None) as (true, false):
                     true.addTask("TaskFadeOut", GroupName=FADE_GROUP, From=FADE_VALUE, Time=TIME_VALUE)
 
                 pop_up.addScope(pop_up_entity.hidePopUp)
 
             # disable pop up layer and finalize entity or show last content in contents queue
-            with tc.addIfTask(lambda: current_content_id is None) as (hide, show):
+            with tc.addIfTask(lambda: new_content_id is None) as (hide, show):
                 hide.addTask("TaskSceneLayerGroupEnable", LayerName=POP_UP, Value=False)
                 hide.addFunction(self.setIsPopUpActive, False)
-                show.addFunction(self.showPopUp, current_content_id)
+                show.addFunction(self.showPopUp, new_content_id)
 
-            tc.addNotify(Notificator.onPopUpHideEnd)
+            tc.addNotify(Notificator.onPopUpHideEnd, previous_content_id)
 
     def setIsPopUpActive(self, value):
         self.is_pop_up_active = value
