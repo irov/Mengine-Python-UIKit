@@ -28,6 +28,11 @@ SCALE_VALUE = (1.1, 1.1, 1.0)
 
 
 class PopUp(BaseEntity):
+    BUTTONS_STATE_DISABLE = 0
+    BUTTONS_STATE_CLOSE = 1
+    BUTTONS_STATE_BACK = 2
+    BUTTONS_STATES = [BUTTONS_STATE_DISABLE, BUTTONS_STATE_CLOSE, BUTTONS_STATE_BACK]
+
     def __init__(self):
         super(PopUp, self).__init__()
         self.tcs = []
@@ -35,8 +40,8 @@ class PopUp(BaseEntity):
         self.content = None
         self.background = None
         self.buttons = {}
+        self.buttons_state = self.BUTTONS_STATE_DISABLE
         self.pop_up_content = None
-        self.is_back_allowed = False
 
     # - BaseEntity -----------------------------------------------------------------------------------------------------
 
@@ -72,9 +77,11 @@ class PopUp(BaseEntity):
 
         self.last_pop_up_content_id = None
 
-        for btn in self.buttons.values():
-            btn.onDestroy()
+        for button in self.buttons.values():
+            button.onDestroy()
         self.buttons = {}
+
+        self.buttons_state = None
 
         if self.background is not None:
             self.background.onDestroy()
@@ -87,8 +94,6 @@ class PopUp(BaseEntity):
         if self.hotspot_block is not None:
             Mengine.destroyNode(self.hotspot_block)
             self.hotspot_block = None
-
-        self.is_back_allowed = False
 
     # - PopUp Elements -------------------------------------------------------------------------------------------------
 
@@ -175,13 +180,23 @@ class PopUp(BaseEntity):
 
         return button_size
 
+    def getButtonsState(self):
+        return self.buttons_state
+
+    def setButtonsState(self, state):
+        print("PopUp.setButtonsState", state)
+        self.buttons_state = state
+
     def _updateButtons(self):
-        if self.is_back_allowed is True:
-            self.buttons[PROTOTYPE_BUTTON_BACK].setEnable(True)
-            self.buttons[PROTOTYPE_BUTTON_CLOSE].setEnable(False)
-        else:
+        if self.buttons_state == self.BUTTONS_STATE_DISABLE:
+            for button in self.buttons.values():
+                button.setEnable(False)
+        elif self.buttons_state == self.BUTTONS_STATE_CLOSE:
             self.buttons[PROTOTYPE_BUTTON_CLOSE].setEnable(True)
             self.buttons[PROTOTYPE_BUTTON_BACK].setEnable(False)
+        elif self.buttons_state == self.BUTTONS_STATE_BACK:
+            self.buttons[PROTOTYPE_BUTTON_BACK].setEnable(True)
+            self.buttons[PROTOTYPE_BUTTON_CLOSE].setEnable(False)
 
     def _setupTitle(self):
         Mengine.setTextAlias("", TITLE_ALIAS, TITLE_TEXT_ID)
@@ -228,8 +243,9 @@ class PopUp(BaseEntity):
                 tc_race.addTask("TaskMovie2ButtonClick", Movie2Button=self.buttons[key].movie)
                 tc_race.addNotify(Notificator.onPopUpHide)
 
-    def showPopUp(self, source, content_id, is_back_allowed):
-        self.is_back_allowed = is_back_allowed
+    def showPopUp(self, source, content_id, buttons_state):
+        self.setButtonsState(buttons_state)
+
         content_node = self.content.getEntityNode()
 
         # play hide popup anim, before showing new content

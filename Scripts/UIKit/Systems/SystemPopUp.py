@@ -29,12 +29,17 @@ class SystemPopUp(System):
         self.addObserver(Notificator.onPopUpShow, self._cbPopUpShow)
         self.addObserver(Notificator.onPopUpHide, self._cbPopUpHide)
 
-    def _cbPopUpShow(self, content_id):
+    def _cbPopUpShow(self, content_id, buttons_state=None):
         if PopUpManager.hasPopUpContent(content_id) is False:
             Trace.log("Manager", 0, "PopUpContent id {!r} doesn't exist in PopUpManager".format(content_id))
             return False
 
-        self.showPopUp(content_id)
+        if buttons_state is not None:
+            if buttons_state not in self.demon.entity.BUTTONS_STATES:
+                Trace.log("Manager", 0, "Invalid buttons state {!r}".format(buttons_state))
+                return False
+
+        self.showPopUp(content_id, buttons_state)
         return False
 
     def _cbPopUpHide(self):
@@ -57,22 +62,22 @@ class SystemPopUp(System):
 
         return current_content_id
 
-    def showPopUp(self, content_id):
+    def showPopUp(self, content_id, buttons_state=None):
         if TaskManager.existTaskChain(POP_UP + "Show") is True:
             return False
 
         pop_up_entity = self.demon.entity
-        print(pop_up_entity)
 
         # add content to contents queue
         if content_id not in self.pop_up_contents:
             self.pop_up_contents.append(content_id)
 
         # param to handle pop up fully close or just back to previous content
-        if len(self.pop_up_contents) > 1:
-            is_back_allowed = True
-        else:
-            is_back_allowed = False
+        if buttons_state is None:
+            if len(self.pop_up_contents) > 1:
+                buttons_state = pop_up_entity.BUTTONS_STATE_BACK
+            else:
+                buttons_state = pop_up_entity.BUTTONS_STATE_CLOSE
 
         # create task chain to show pop up
         with TaskManager.createTaskChain(Name=POP_UP + "Show") as tc:
@@ -81,10 +86,10 @@ class SystemPopUp(System):
 
             with tc.addParallelTask(2) as (fade, pop_up):
                 # play fade in if showing first pop up in queue
-                with fade.addIfTask(lambda: is_back_allowed is False) as (true, false):
+                with fade.addIfTask(lambda: buttons_state != pop_up_entity.BUTTONS_STATE_BACK) as (true, false):
                     true.addTask("TaskFadeIn", GroupName=FADE_GROUP, To=FADE_VALUE, Time=TIME_VALUE)
 
-                pop_up.addScope(pop_up_entity.showPopUp, content_id, is_back_allowed)
+                pop_up.addScope(pop_up_entity.showPopUp, content_id, buttons_state)
 
     def hidePopUp(self):
         if TaskManager.existTaskChain(POP_UP + "Hide") is True:
