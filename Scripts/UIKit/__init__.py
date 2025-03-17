@@ -5,6 +5,7 @@ def onInitialize():
         "onPopUpShowEnd",
         "onPopUpHide",
         "onPopUpHideEnd",
+        "onPopUpShowDebugAd",
     ]
     Notificator.addIdentities(identities)
 

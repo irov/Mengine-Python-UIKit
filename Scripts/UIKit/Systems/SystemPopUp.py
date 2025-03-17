@@ -29,6 +29,7 @@ class SystemPopUp(System):
     def addObservers(self):
         self.addObserver(Notificator.onPopUpShow, self._cbPopUpShow)
         self.addObserver(Notificator.onPopUpHide, self._cbPopUpHide)
+        self.addObserver(Notificator.onPopUpShowDebugAd, self._cbPopUpShowDebugAd)
 
     def _cbPopUpShow(self, content_id, buttons_state=None):
         if PopUpManager.hasPopUpContent(content_id) is False:
@@ -49,6 +50,11 @@ class SystemPopUp(System):
             return False
 
         self.hidePopUp()
+        return False
+
+    def _cbPopUpShowDebugAd(self):
+        pop_up_entity = self.demon.entity
+        self._cbPopUpShow("DebugAd", pop_up_entity.BUTTONS_STATE_DISABLE)
         return False
 
     # - PopUp ----------------------------------------------------------------------------------------------------------
