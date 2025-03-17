@@ -2,7 +2,9 @@ def onInitialize():
     from Foundation.Notificator import Notificator
     identities = [
         "onPopUpShow",
+        "onPopUpShowEnd",
         "onPopUpHide",
+        "onPopUpHideEnd",
     ]
     Notificator.addIdentities(identities)
 
