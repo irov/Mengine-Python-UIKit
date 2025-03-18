@@ -12,11 +12,16 @@ FADE_GROUP = "FadeUI"
 
 
 class SystemPopUp(System):
+    STATE_DISABLE = 0
+    STATE_SHOWING = 1
+    STATE_ACTIVE = 2
+    STATE_HIDING = 3
+
     def __init__(self):
         super(SystemPopUp, self).__init__()
         self.demon = None
         self.pop_up_contents = []
-        self.is_pop_up_active = False
+        self.pop_up_state = None
 
     def _onRun(self):
         self.demon = DemonManager.getDemon(POP_UP)
@@ -59,6 +64,12 @@ class SystemPopUp(System):
 
     # - PopUp ----------------------------------------------------------------------------------------------------------
 
+    def setPopUpState(self, value):
+        self.pop_up_state = value
+
+    def getPopUpState(self):
+        return self.pop_up_state
+
     def getCurrentContentId(self):
         current_content_id = None
 
@@ -73,6 +84,7 @@ class SystemPopUp(System):
         if TaskManager.existTaskChain(POP_UP + "Show") is True:
             return False
 
+        self.setPopUpState(self.STATE_SHOWING)
         pop_up_entity = self.demon.entity
 
         # add content to contents queue
@@ -88,12 +100,6 @@ class SystemPopUp(System):
 
         # create task chain to show pop up
         with TaskManager.createTaskChain(Name=POP_UP + "Show") as tc:
-            # if any pop up is hiding right now, wait till it's done
-            with tc.addIfTask(self.getIsPopUpActive) as (true, false):
-                true.addListener(Notificator.onPopUpHideEnd)
-
-            tc.addFunction(self.setIsPopUpActive, True)
-
             # enable pop up layer and initialize entity
             tc.addTask("TaskSceneLayerGroupEnable", LayerName=POP_UP, Value=True)
 
@@ -105,11 +111,13 @@ class SystemPopUp(System):
                 pop_up.addScope(pop_up_entity.showPopUp, content_id, buttons_state)
 
             tc.addNotify(Notificator.onPopUpShowEnd, content_id)
+            tc.addFunction(self.setPopUpState, self.STATE_ACTIVE)
 
     def hidePopUp(self):
         if TaskManager.existTaskChain(POP_UP + "Hide") is True:
             return False
 
+        self.setPopUpState(self.STATE_HIDING)
         pop_up_entity = self.demon.entity
 
         # remove content from contents queue
@@ -131,13 +139,7 @@ class SystemPopUp(System):
             # disable pop up layer and finalize entity or show last content in contents queue
             with tc.addIfTask(lambda: new_content_id is None) as (hide, show):
                 hide.addTask("TaskSceneLayerGroupEnable", LayerName=POP_UP, Value=False)
-                hide.addFunction(self.setIsPopUpActive, False)
                 show.addFunction(self.showPopUp, new_content_id)
 
             tc.addNotify(Notificator.onPopUpHideEnd, previous_content_id)
-
-    def setIsPopUpActive(self, value):
-        self.is_pop_up_active = value
-
-    def getIsPopUpActive(self):
-        return self.is_pop_up_active
+            tc.addFunction(self.setPopUpState, self.STATE_DISABLE)
