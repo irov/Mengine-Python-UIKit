@@ -184,7 +184,6 @@ class PopUp(BaseEntity):
         return self.buttons_state
 
     def setButtonsState(self, state):
-        print("PopUp.setButtonsState", state)
         self.buttons_state = state
 
     def _updateButtons(self):
@@ -243,7 +242,7 @@ class PopUp(BaseEntity):
                 tc_race.addTask("TaskMovie2ButtonClick", Movie2Button=self.buttons[key].movie)
                 tc_race.addNotify(Notificator.onPopUpHide)
 
-    def showPopUp(self, source, content_id, buttons_state):
+    def showPopUp(self, source, content_id, buttons_state, **content_args):
         self.setButtonsState(buttons_state)
 
         content_node = self.content.getEntityNode()
@@ -254,7 +253,7 @@ class PopUp(BaseEntity):
 
         # play show popup anim with content
         with source.addParallelTask(2) as (pop_up, content):
-            content.addScope(self.showPopUpContent, content_id)
+            content.addScope(self.showPopUpContent, content_id, **content_args)
 
             with pop_up.addParallelTask(2) as (alpha, scale):
                 alpha.addTask("TaskNodeAlphaTo", Node=content_node, From=0.0, To=1.0, Time=TIME_VALUE)
@@ -271,9 +270,9 @@ class PopUp(BaseEntity):
                 alpha.addTask("TaskNodeAlphaTo", Node=content_node, From=1.0, To=0.0, Time=TIME_VALUE)
                 scale.addTask("TaskNodeScaleTo", Node=content_node, From=(1.0, 1.0, 1.0), To=SCALE_VALUE, Time=TIME_VALUE)
 
-    def showPopUpContent(self, source, pop_up_content_id):
+    def showPopUpContent(self, source, pop_up_content_id, **content_args):
         self.pop_up_content = PopUpManager.getPopUpContent(pop_up_content_id)
-        self.pop_up_content.onInitialize(self)
+        self.pop_up_content.onInitialize(self, **content_args)
 
         pop_up_content_slot = self.content.getMovieSlot(SLOT_CONTENT)
         self.pop_up_content.attachTo(pop_up_content_slot)

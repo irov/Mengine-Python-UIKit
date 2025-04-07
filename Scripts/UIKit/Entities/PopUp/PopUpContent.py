@@ -16,17 +16,16 @@ class PopUpContent(Initializer):
 
     # - Initializer ----------------------------------------------------------------------------------------------------
 
-    def _onInitialize(self, pop_up_base):
+    def _onInitialize(self, pop_up_base, **content_args):
         super(PopUpContent, self)._onInitialize()
         self.pop_up_base = pop_up_base
 
         if self.__setupContent() is False:
             return False
 
-        self._onInitializeContent()
+        self._onInitializeContent(**content_args)
 
-    def _onInitializeContent(self):
-        print "Initialize PopUpContent {!r}".format(self.content_id)
+    def _onInitializeContent(self, **content_args):
         pass
 
     def _onFinalize(self):
@@ -45,7 +44,6 @@ class PopUpContent(Initializer):
         self.pop_up_base = None
 
     def _onFinalizeContent(self):
-        print "Finalize PopUpContent {!r}".format(self.content_id)
         pass
 
     # - Content --------------------------------------------------------------------------------------------------------
