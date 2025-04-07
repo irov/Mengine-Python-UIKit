@@ -3,14 +3,18 @@ from Foundation.TaskManager import TaskManager
 from UIKit.Managers.PrototypeManager import PrototypeManager
 
 
+TITLE_TEXT_ID = "ID_PopUpTitle_{}"
+MOVIE_CONTENT = "Movie2_Content_{}"
+
+
 class PopUpContent(Initializer):
     content_id = ""
-    title_text_id = ""
-    content_movie_name = ""
 
     def __init__(self):
         super(PopUpContent, self).__init__()
         self.pop_up_base = None
+        self.title_text_id = None
+        self.content_movie_name = None
         self.content = None
         self.tcs = []
 
@@ -19,6 +23,9 @@ class PopUpContent(Initializer):
     def _onInitialize(self, pop_up_base, **content_args):
         super(PopUpContent, self)._onInitialize()
         self.pop_up_base = pop_up_base
+
+        self.title_text_id = TITLE_TEXT_ID.format(self.content_id)
+        self.content_movie_name = MOVIE_CONTENT.format(self.content_id)
 
         if self.__setupContent() is False:
             return False
@@ -40,6 +47,9 @@ class PopUpContent(Initializer):
         if self.content is not None:
             self.content.onDestroy()
             self.content = None
+
+        self.title_text_id = None
+        self.content_movie_name = None
 
         self.pop_up_base = None
 
