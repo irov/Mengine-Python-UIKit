@@ -13,10 +13,7 @@ SLOT_BACK = "Back"
 TITLE_ALIAS = "$AliasPopUpTitle"
 TITLE_TEXT_ID = "ID_PopUpTitle"
 
-
 PROTOTYPE_BG = "PopUpBackground"
-PROTOTYPE_BG_TYPE = "Normal"
-
 PROTOTYPE_BUTTON = "PopUpButton"
 PROTOTYPE_BUTTON_CLOSE = "Close"
 PROTOTYPE_BUTTON_BACK = "Back"
@@ -33,6 +30,10 @@ class PopUp(BaseEntity):
     BUTTONS_STATE_BACK = 2
     BUTTONS_STATES = [BUTTONS_STATE_DISABLE, BUTTONS_STATE_CLOSE, BUTTONS_STATE_BACK]
 
+    PROTOTYPE_BG_NORMAL = "Normal"
+    PROTOTYPE_BG_BIG = "Big"
+    BACKGROUNDS_SIZE_TYPES = [PROTOTYPE_BG_NORMAL, PROTOTYPE_BG_BIG]
+
     def __init__(self):
         super(PopUp, self).__init__()
         self.tcs = []
@@ -41,6 +42,7 @@ class PopUp(BaseEntity):
         self.background = None
         self.buttons = {}
         self.buttons_state = self.BUTTONS_STATE_DISABLE
+        self.background_size_type = None
         self.pop_up_content = None
 
     # - BaseEntity -----------------------------------------------------------------------------------------------------
@@ -82,6 +84,7 @@ class PopUp(BaseEntity):
         self.buttons = {}
 
         self.buttons_state = None
+        self.background_size_type = None
 
         if self.background is not None:
             self.background.onDestroy()
@@ -137,9 +140,13 @@ class PopUp(BaseEntity):
         content_size = Mengine.vec2f(background_size.x, background_size.y - header_size.y)
         return content_size
 
+    def setBackgroundSizeType(self, size_type):
+        self.background_size_type = size_type
+
     def _setupBackground(self):
         slot_bg = self.content.getMovieSlot(SLOT_BG)
-        background_prototype = PrototypeManager.generateObjectUniqueOnNode(slot_bg, PROTOTYPE_BG, Size=PROTOTYPE_BG_TYPE)
+        background_size_type = self.background_size_type if self.background_size_type is not None else self.PROTOTYPE_BG_NORMAL
+        background_prototype = PrototypeManager.generateObjectUniqueOnNode(slot_bg, PROTOTYPE_BG, Size=background_size_type)
         background_prototype.setEnable(True)
         self.background = background_prototype
 

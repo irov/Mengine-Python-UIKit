@@ -36,7 +36,7 @@ class SystemPopUp(System):
         self.addObserver(Notificator.onPopUpHide, self._cbPopUpHide)
         self.addObserver(Notificator.onPopUpShowDebugAd, self._cbPopUpShowDebugAd)
 
-    def _cbPopUpShow(self, content_id, buttons_state=None, **content_args):
+    def _cbPopUpShow(self, content_id, buttons_state=None, background_size_type=None, **content_args):
         if PopUpManager.hasPopUpContent(content_id) is False:
             Trace.log("Manager", 0, "PopUpContent id {!r} doesn't exist in PopUpManager".format(content_id))
             return False
@@ -46,7 +46,7 @@ class SystemPopUp(System):
                 Trace.log("Manager", 0, "Invalid buttons state {!r}".format(buttons_state))
                 return False
 
-        self.showPopUp(content_id, buttons_state, **content_args)
+        self.showPopUp(content_id, buttons_state, background_size_type, **content_args)
         return False
 
     def _cbPopUpHide(self):
@@ -80,7 +80,7 @@ class SystemPopUp(System):
 
         return current_content_id
 
-    def showPopUp(self, content_id, buttons_state=None, **content_args):
+    def showPopUp(self, content_id, buttons_state=None, background_size_type=None, **content_args):
         if TaskManager.existTaskChain(POP_UP + "Show") is True:
             return False
 
@@ -97,6 +97,9 @@ class SystemPopUp(System):
                 buttons_state = pop_up_entity.BUTTONS_STATE_BACK
             else:
                 buttons_state = pop_up_entity.BUTTONS_STATE_CLOSE
+
+        # set pop up background size type
+        pop_up_entity.setBackgroundSizeType(background_size_type)
 
         # create task chain to show pop up
         with TaskManager.createTaskChain(Name=POP_UP + "Show") as tc:
