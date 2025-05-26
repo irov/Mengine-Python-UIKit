@@ -100,7 +100,7 @@ class PopUpContent(Initializer):
         slot = self.content.getMovieSlot(name)
         slot.addChild(object_node)
 
-    def setupObjectsSlotsAsTable(self, objects_list):
+    def setupObjectsSlotsAsTable(self, objects_list, use_slot_name=True):
         """
         objects_list = [
             dict_1 = {
@@ -139,7 +139,11 @@ class PopUpContent(Initializer):
                 obj_pos.x += current_size_x
                 obj_pos.y += current_size_y
 
-                obj_slot = self.content.getMovieSlot(key)
+                if use_slot_name is True:
+                    obj_slot = self.content.getMovieSlot(key)
+                else:
+                    obj_slot = obj.getEntityNode()
+
                 obj_slot.setLocalPosition(obj_pos)
 
                 current_size_x += obj_size.x
