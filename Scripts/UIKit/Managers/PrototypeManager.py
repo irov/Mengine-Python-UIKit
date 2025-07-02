@@ -109,6 +109,11 @@ class ObjectContainer(object):
         self.movie = movie
         self.icon = icon
 
+        self.layout_width = 0
+        self.layout_height = 0
+        self.layout_offset_x = 0
+        self.layout_offset_y = 0
+
     def setEnable(self, state):
         self.movie.setEnable(state)
         if self.icon is not None:
@@ -155,3 +160,19 @@ class ObjectContainer(object):
         self.movie.setParam(key, value)
         if self.icon is not None:
             self.icon.setParam(key, value)
+
+    def setLayoutSize(self, size):
+        self.layout_width = size[0]
+        self.layout_height = size[1]
+
+    def getLayoutSize(self):
+        return (self.layout_width, self.layout_height)
+
+    def setLayoutOffset(self, offset):
+        print "Element: ", self, " setLayoutOffset ", offset
+        self.layout_offset_x = offset[0]
+        self.layout_offset_y = offset[1]
+
+    def getLayoutOffset(self):
+        print "Element: ", self, " getLayoutOffset ", (self.layout_offset_x, self.layout_offset_y)
+        return (self.layout_offset_x, self.layout_offset_y)
