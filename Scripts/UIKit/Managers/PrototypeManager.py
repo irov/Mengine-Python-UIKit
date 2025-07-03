@@ -104,15 +104,9 @@ class PrototypeManager(object):
 
 
 class ObjectContainer(object):
-
     def __init__(self, movie, icon=None):
         self.movie = movie
         self.icon = icon
-
-        self.layout_width = 0
-        self.layout_height = 0
-        self.layout_offset_x = 0
-        self.layout_offset_y = 0
 
     def setEnable(self, state):
         self.movie.setEnable(state)
@@ -161,18 +155,10 @@ class ObjectContainer(object):
         if self.icon is not None:
             self.icon.setParam(key, value)
 
-    def setLayoutSize(self, size):
-        self.layout_width = size[0]
-        self.layout_height = size[1]
-
     def getLayoutSize(self):
-        return (self.layout_width, self.layout_height)
+        size = self.getSize()
+        return (size.x, size.y)
 
-    def setLayoutOffset(self, offset):
+    def setLayoutOffset(self, offset, size):
         print "Element: ", self, " setLayoutOffset ", offset
-        self.layout_offset_x = offset[0]
-        self.layout_offset_y = offset[1]
-
-    def getLayoutOffset(self):
-        print "Element: ", self, " getLayoutOffset ", (self.layout_offset_x, self.layout_offset_y)
-        return (self.layout_offset_x, self.layout_offset_y)
+        self.setLocalPosition((offset[0] + size[0] / 2.0, offset[1] + size[1] / 2.0))
