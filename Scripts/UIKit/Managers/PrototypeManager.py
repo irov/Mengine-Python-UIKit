@@ -167,7 +167,7 @@ class ObjectContainer(object):
         print "Object: ", self.movie
         print "Layout Size: ", size
         print "Layout Offset: ", offset
-        # self.setLocalPosition((offset[0] + size[0] / 2.0, offset[1] + size[1] / 2.0))
+        self.setLocalPosition((offset[0] + size[0] / 2.0, offset[1] + size[1] / 2.0))
         self.layout_offset = offset
         self.layout_size = size
 
