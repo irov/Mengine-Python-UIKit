@@ -108,9 +108,6 @@ class ObjectContainer(object):
         self.movie = movie
         self.icon = icon
 
-        self.layout_size = (0, 0)
-        self.layout_offset = (0, 0)
-
     def setEnable(self, state):
         self.movie.setEnable(state)
         if self.icon is not None:
@@ -162,14 +159,6 @@ class ObjectContainer(object):
         size = self.getSize()
         return (size.x, size.y)
 
-    def setLayoutOffset(self, offset, size):
-        print "\n------------------"
-        print "Object: ", self.movie
-        print "Layout Size: ", size
-        print "Layout Offset: ", offset
-        self.setLocalPosition((offset[0] + size[0] / 2.0, offset[1] + size[1] / 2.0))
-        self.layout_offset = offset
-        self.layout_size = size
-
-    def getLayoutData(self):
-        return self.layout_offset, self.layout_size
+    def setLayoutOffset(self, box, offset, size):
+        box_width, box_height = box.getSize()
+        self.setLocalPosition((-box_width/2 + offset[0] + size[0]/2, -box_height/2 + offset[1] + size[1]/2))
