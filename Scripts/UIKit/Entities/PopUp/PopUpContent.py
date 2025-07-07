@@ -1,5 +1,6 @@
 from Foundation.Initializer import Initializer
 from Foundation.TaskManager import TaskManager
+from Foundation.LayoutBox import LayoutBox
 from UIKit.Managers.PrototypeManager import PrototypeManager
 
 
@@ -16,6 +17,7 @@ class PopUpContent(Initializer):
         self.title_text_id = None
         self.content_movie_name = None
         self.content = None
+        self.layout_box = None
         self.tcs = []
 
     # - Initializer ----------------------------------------------------------------------------------------------------
@@ -30,6 +32,8 @@ class PopUpContent(Initializer):
         if self.__setupContent() is False:
             return False
 
+        self.__setupLayoutBox()
+
         self._onInitializeContent(**content_args)
 
     def _onInitializeContent(self, **content_args):
@@ -41,6 +45,10 @@ class PopUpContent(Initializer):
         for tc in self.tcs:
             tc.cancel()
         self.tcs = []
+
+        if self.layout_box is not None:
+            self.layout_box.finalize()
+            self.layout_box = None
 
         self._onFinalizeContent()
 
@@ -67,6 +75,13 @@ class PopUpContent(Initializer):
         self.content.setEnable(True)
 
         return True
+
+    def __setupLayoutBox(self):
+        def getContentSize():
+            content_size = self.pop_up_base.getContentSize()
+            return content_size.x, content_size.y
+
+        self.layout_box = LayoutBox(getContentSize)
 
     # - Tools ----------------------------------------------------------------------------------------------------------
 
