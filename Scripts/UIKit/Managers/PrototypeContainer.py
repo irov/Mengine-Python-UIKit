@@ -54,9 +54,9 @@ class PrototypeContainer(object):
         size = self.getSize()
         return (size.x, size.y)
 
-    def setLayoutOffset(self, box, offset, size):
-        box_width, box_height = box.getSize()
+    def setLayoutOffset(self, layout_box, layout_offset, layout_size):
+        layout_box_width, layout_box_height = layout_box.getSize()
         self.setLocalPosition((
-            offset[0] + size[0]/2 - box_width/2,
-            offset[1] + size[1]/2 - box_height/2
+            layout_offset[0] + layout_size[0]/2 - layout_box_width/2,
+            layout_offset[1] + layout_size[1]/2 - layout_box_height/2
         ))
