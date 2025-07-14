@@ -59,11 +59,8 @@ class AdjustableScreenUtils(object):
         return 0.0
 
     @staticmethod
-    def getMainSizes():
-        """ :returns: game_width, game_height, header_height, banner_height """
+    def getBannerHeight():
         game_width = AdjustableScreenUtils.getGameWidth()
-        game_height = AdjustableScreenUtils.getGameHeight()
-        header_height = AdjustableScreenUtils.getHeaderHeight()
 
         if Mengine.hasOption("ignorebanner") is True:
             banner_height = 0.0
@@ -72,14 +69,24 @@ class AdjustableScreenUtils(object):
             if banner_height is None:
                 banner_height = AdjustableScreenUtils.getPhoneAdaptiveBannerHeight(game_width)
 
+        return banner_height
+
+    @staticmethod
+    def getMainSizes():
+        """ :returns: game_width, game_height, header_height, banner_height """
+        game_width = AdjustableScreenUtils.getGameWidth()
+        game_height = AdjustableScreenUtils.getGameHeight()
+        header_height = AdjustableScreenUtils.getHeaderHeight()
+        banner_height = AdjustableScreenUtils.getBannerHeight()
+
         return game_width, game_height, header_height, banner_height
 
     @staticmethod
     def getMainSizesExt():
         """ :returns: game_width, game_height, header_height, banner_height, viewport, x_center, y_center """
-        game_width, game_height, top_offset, bottom_offset = AdjustableScreenUtils.getMainSizes()
+        game_width, game_height, header_height, banner_height = AdjustableScreenUtils.getMainSizes()
         viewport = Mengine.getGameViewport()
         x_center = viewport.begin.x + game_width / 2
         y_center = viewport.begin.y + game_height / 2
 
-        return game_width, game_height, top_offset, bottom_offset, viewport, x_center, y_center
+        return game_width, game_height, header_height, banner_height, viewport, x_center, y_center
