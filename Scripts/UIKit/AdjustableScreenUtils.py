@@ -72,6 +72,14 @@ class AdjustableScreenUtils(object):
         return banner_height
 
     @staticmethod
+    def getActualBannerHeight():
+        return AdvertisementProvider.getBannerHeight()
+
+    @staticmethod
+    def getActualBannerWidth():
+        return AdvertisementProvider.getBannerWidth()
+
+    @staticmethod
     def getMainSizes():
         """ :returns: game_width, game_height, header_height, banner_height """
         game_width = AdjustableScreenUtils.getGameWidth()
