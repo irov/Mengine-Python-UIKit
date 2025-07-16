@@ -98,3 +98,14 @@ class AdjustableScreenUtils(object):
         y_center = viewport.begin.y + game_height / 2
 
         return game_width, game_height, header_height, banner_height, viewport, x_center, y_center
+
+    @staticmethod
+    def getGameCenter():
+        """ :returns: x_center, y_center """
+        game_width = AdjustableScreenUtils.getGameWidth()
+        game_height = AdjustableScreenUtils.getGameHeight()
+        viewport = Mengine.getGameViewport()
+        x_center = viewport.begin.x + game_width / 2
+        y_center = viewport.begin.y + game_height / 2
+
+        return Mengine.vec2f(x_center, y_center)
