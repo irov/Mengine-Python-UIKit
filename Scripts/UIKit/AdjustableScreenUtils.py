@@ -59,6 +59,22 @@ class AdjustableScreenUtils(object):
         return 0.0
 
     @staticmethod
+    def getHeaderSize():
+        """ :returns: header_width, header_height """
+        header_size = Mengine.vec2f(0.0, 0.0)
+
+        for header_name in AdjustableScreenUtils.__headers:
+            if DemonManager.hasDemon(header_name) is False:
+                continue
+
+            demon = DemonManager.getDemon(header_name)
+            if demon.isActive() is True:
+                header_size = demon.getSize()
+                break
+
+        return header_size
+
+    @staticmethod
     def getBannerHeight():
         game_width = AdjustableScreenUtils.getGameWidth()
 
