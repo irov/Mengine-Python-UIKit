@@ -5,6 +5,8 @@ from Foundation.Providers.AdvertisementProvider import AdvertisementProvider
 class AdjustableScreenUtils(object):
     __headers = []
 
+# ----- Header ---------------------------------------------------------------------------------------------------------
+
     @staticmethod
     def registerHeaders(headers):
         """ What demons should we check as Header in future calculations.
@@ -21,30 +23,6 @@ class AdjustableScreenUtils(object):
             return True
 
         Notification.addObserver(Notificator.onRun, _checkNewHeaders)
-
-    @staticmethod
-    def getGameWidth():
-        viewport = Mengine.getGameViewport()
-        width = viewport.end.x - viewport.begin.x
-        return width
-
-    @staticmethod
-    def getGameHeight():
-        viewport = Mengine.getGameViewport()
-        height = viewport.end.y - viewport.begin.y
-        return height
-
-    @staticmethod
-    def getPhoneAdaptiveBannerHeight(width):
-        """ Applovin Banners are automatically sized to 320x50 on phones """
-        height = 50.0 * width / 320.0
-        return height
-
-    @staticmethod
-    def getTabletAdaptiveBannerHeight(width):
-        """ Applovin Banners are automatically sized to 728x90 on tablets """
-        height = 90.0 * width / 728.0
-        return height
 
     @staticmethod
     def getHeaderHeight():
@@ -74,46 +52,45 @@ class AdjustableScreenUtils(object):
 
         return header_size
 
+# ----- Banner ---------------------------------------------------------------------------------------------------------
+
+    @staticmethod
+    def getBannerWidth():
+        banner_width = AdvertisementProvider.getBannerWidth()
+
+        if Mengine.hasOption("ignorebanner") is True or banner_width is None:
+            banner_width = 0.0
+
+        return banner_width
+
     @staticmethod
     def getBannerHeight():
-        game_width = AdjustableScreenUtils.getGameWidth()
+        banner_height = AdvertisementProvider.getBannerHeight()
 
-        if Mengine.hasOption("ignorebanner") is True:
+        if Mengine.hasOption("ignorebanner") is True or banner_height is None:
             banner_height = 0.0
-        else:
-            banner_height = AdvertisementProvider.getBannerHeight()
-            if banner_height is None:
-                banner_height = AdjustableScreenUtils.getPhoneAdaptiveBannerHeight(game_width)
 
         return banner_height
 
     @staticmethod
-    def getActualBannerHeight():
-        return AdvertisementProvider.getBannerHeight()
-
-    @staticmethod
-    def getActualBannerWidth():
-        return AdvertisementProvider.getBannerWidth()
-
-    @staticmethod
-    def getMainSizes():
-        """ :returns: game_width, game_height, header_height, banner_height """
-        game_width = AdjustableScreenUtils.getGameWidth()
-        game_height = AdjustableScreenUtils.getGameHeight()
-        header_height = AdjustableScreenUtils.getHeaderHeight()
+    def getBannerSize():
+        banner_width = AdjustableScreenUtils.getBannerWidth()
         banner_height = AdjustableScreenUtils.getBannerHeight()
+        return Mengine.vec2f(banner_width, banner_height)
 
-        return game_width, game_height, header_height, banner_height
+# ----- Game -----------------------------------------------------------------------------------------------------------
 
     @staticmethod
-    def getMainSizesExt():
-        """ :returns: game_width, game_height, header_height, banner_height, viewport, x_center, y_center """
-        game_width, game_height, header_height, banner_height = AdjustableScreenUtils.getMainSizes()
+    def getGameWidth():
         viewport = Mengine.getGameViewport()
-        x_center = viewport.begin.x + game_width / 2
-        y_center = viewport.begin.y + game_height / 2
+        width = viewport.end.x - viewport.begin.x
+        return width
 
-        return game_width, game_height, header_height, banner_height, viewport, x_center, y_center
+    @staticmethod
+    def getGameHeight():
+        viewport = Mengine.getGameViewport()
+        height = viewport.end.y - viewport.begin.y
+        return height
 
     @staticmethod
     def getGameCenter():
@@ -123,5 +100,22 @@ class AdjustableScreenUtils(object):
         viewport = Mengine.getGameViewport()
         x_center = viewport.begin.x + game_width / 2
         y_center = viewport.begin.y + game_height / 2
-
         return Mengine.vec2f(x_center, y_center)
+
+    @staticmethod
+    def getMainSizes():
+        """ :returns: game_width, game_height, header_height, banner_height """
+        game_width = AdjustableScreenUtils.getGameWidth()
+        game_height = AdjustableScreenUtils.getGameHeight()
+        header_height = AdjustableScreenUtils.getHeaderHeight()
+        banner_height = AdjustableScreenUtils.getBannerHeight()
+        return game_width, game_height, header_height, banner_height
+
+    @staticmethod
+    def getMainSizesExt():
+        """ :returns: game_width, game_height, header_height, banner_height, viewport, x_center, y_center """
+        game_width, game_height, header_height, banner_height = AdjustableScreenUtils.getMainSizes()
+        viewport = Mengine.getGameViewport()
+        x_center = viewport.begin.x + game_width / 2
+        y_center = viewport.begin.y + game_height / 2
+        return game_width, game_height, header_height, banner_height, viewport, x_center, y_center
