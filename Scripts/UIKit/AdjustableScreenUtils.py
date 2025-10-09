@@ -25,14 +25,22 @@ class AdjustableScreenUtils(object):
         Notification.addObserver(Notificator.onRun, _checkNewHeaders)
 
     @staticmethod
-    def getHeaderHeight():
+    def getActiveHeader():
         for header_name in AdjustableScreenUtils.__headers:
             if DemonManager.hasDemon(header_name) is False:
                 continue
 
             demon = DemonManager.getDemon(header_name)
             if demon.isActive() is True:
-                return demon.getHeight()
+                return demon
+
+        return None
+
+    @staticmethod
+    def getHeaderHeight():
+        active_header = AdjustableScreenUtils.getActiveHeader()
+        if active_header is not None:
+            return active_header.getHeight()
 
         return 0.0
 
