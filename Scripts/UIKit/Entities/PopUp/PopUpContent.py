@@ -102,6 +102,7 @@ class PopUpContent(Initializer):
     def _generateContainter(self, name, **params):
         prototype_name = self.__class__.__name__ + "_" + name
         container = PrototypeManager.generateObjectContainer(prototype_name, **params)
+
         if container is None:
             return None
 

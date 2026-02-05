@@ -3,15 +3,14 @@ from Foundation.DatabaseManager import DatabaseManager
 from UIKit.Managers.IconManager import IconManager
 from UIKit.Managers.PrototypeContainer import PrototypeContainer
 
-
 class PrototypeManager(object):
     s_group = "UIStore"
     s_db_module = "Database"
     s_db_name = "Prototypes"
 
     @staticmethod
-    def _generateObjectUnique(prototype_name, object_name, **params):
-        if GroupManager.hasPrototype(PrototypeManager.s_group, prototype_name) is False:
+    def _generateObjectUnique(prototype_name, object_name, object_params):
+        if _DEVELOPMENT is True and GroupManager.hasPrototype(PrototypeManager.s_group, prototype_name) is False:
             Trace.log("Manager", 0, "Not found prototype {!r} in {!r}".format(prototype_name, PrototypeManager.s_group))
             return
 
@@ -19,29 +18,21 @@ class PrototypeManager(object):
             object_name,
             PrototypeManager.s_group,
             prototype_name,
-            **params
+            **object_params if object_params is not None else {}
         )
         return movie
 
     @staticmethod
-    def generateObjectUniqueOnNode(node, name, object_name=None, **params):
+    def generateObjectContainerOnNode(node, name, object_name=None, object_params=None, **params):
         """ **params: Size, Color
-            :returns: Object (default)
+            :returns: PrototypeContainer ( contains movie and icon (optional) )
          """
-        container = PrototypeManager.generateObjectContainerOnNode(node, name, object_name, **params)
-        if container is not None:
-            return container.movie
-        return None
-
-    @staticmethod
-    def generateObjectContainerOnNode(node, name, object_name=None, **params):
-        """ **params: Size, Color
-            :returns: ObjectContainer ( contains movie and icon (optional) )
-         """
-        container = PrototypeManager.generateObjectContainer(name, object_name, **params)
+        container = PrototypeManager.generateObjectContainer(name, object_name, object_params, **params)
 
         if container is None:
             return None
+
+        container.movie.setEnable(True)
 
         entity_node = container.movie.getEntityNode()
         node.addChild(entity_node)
@@ -49,19 +40,9 @@ class PrototypeManager(object):
         return container
 
     @staticmethod
-    def generateObjectUnique(name, object_name=None, **params):
+    def generateObjectContainer(name, object_name=None, object_params=None, **params):
         """ **params: Size, Color
-            :returns: Object (default)
-         """
-        container = PrototypeManager.generateObjectContainer(name, object_name, **params)
-        if container is not None:
-            return container.movie
-        return None
-
-    @staticmethod
-    def generateObjectContainer(name, object_name=None, **params):
-        """ **params: Size, Color
-            :returns: ObjectContainer ( contains movie and icon (optional) )
+            :returns: PrototypeContainer ( contains movie and icon (optional) )
          """
 
         db = DatabaseManager.getDatabase(
@@ -79,7 +60,7 @@ class PrototypeManager(object):
         if object_name is None:
             object_name = params_orm.ObjectName
 
-        object_unique = PrototypeManager._generateObjectUnique(params_orm.Prototype, object_name)
+        object_unique = PrototypeManager._generateObjectUnique(params_orm.Prototype, object_name, object_params)
         if object_unique is None:
             return None
 
@@ -101,3 +82,27 @@ class PrototypeManager(object):
 
         container = PrototypeContainer(object_unique, icon)
         return container
+
+    @staticmethod
+    def generateObjectUnique(name, object_name=None, object_params=None, **params):
+        """ **params: Size, Color
+            :returns: Object (default)
+         """
+        container = PrototypeManager.generateObjectContainer(name, object_name, object_params, **params)
+
+        if container is None:
+            return None
+
+        return container.movie
+
+    @staticmethod
+    def generateObjectUniqueOnNode(node, name, object_name=None, object_params=None, **params):
+        """ **params: Size, Color
+            :returns: Object (default)
+         """
+        container = PrototypeManager.generateObjectContainerOnNode(node, name, object_name, object_params, **params)
+
+        if container is None:
+            return None
+
+        return container.movie
