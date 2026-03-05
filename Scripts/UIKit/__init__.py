@@ -1,4 +1,6 @@
 def onInitialize():
+    Trace.msg_dev("UIKit onInitialize")
+
     from Foundation.Notificator import Notificator
     identities = [
         "onPopUpShow",
@@ -15,18 +17,17 @@ def onInitialize():
     ]
     TraceManager.addTraces(traces)
 
-    from Foundation.EntityManager import EntityManager
-    from Foundation.ObjectManager import ObjectManager
-    types = [
-        {"name": "PopUp", "override": True}
+    EntityTypes = [
+        {"Type": "PopUp", "Override": True}
     ]
-    if EntityManager.importEntities("UIKit.Entities", types) is False:
-        return False
-    if ObjectManager.importObjects("UIKit.Objects", types) is False:
+
+    from Foundation.Bootstrapper import Bootstrapper
+    if Bootstrapper.loadEntities("UIKit", EntityTypes) is False:
         return False
 
     return True
 
 
 def onFinalize():
+    Trace.msg_dev("UIKit onFinalize")
     pass

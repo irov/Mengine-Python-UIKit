@@ -1,4 +1,4 @@
-from Foundation.Entity.BaseEntity import BaseEntity
+from Foundation.BaseEntity import BaseEntity
 from Foundation.TaskManager import TaskManager
 from UIKit.Managers.PopUpManager import PopUpManager
 from UIKit.Managers.PrototypeManager import PrototypeManager
